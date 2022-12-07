@@ -162,7 +162,6 @@ public class EventServlet extends EventSourceServlet {
 
         @Override
         public void onResponse(SingleObservation observation, Registration registration, ObserveResponse response) {
-
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Received notification from [{}] containing value [{}]", observation.getPath(),
                         response.getContent());

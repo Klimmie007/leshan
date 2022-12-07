@@ -18,7 +18,11 @@
 package org.eclipse.leshan.server.californium;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -34,11 +38,16 @@ import org.eclipse.leshan.core.Startable;
 import org.eclipse.leshan.core.Stoppable;
 import org.eclipse.leshan.core.californium.CoapResponseCallback;
 import org.eclipse.leshan.core.link.lwm2m.LwM2mLinkParser;
+import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.node.codec.CodecException;
 import org.eclipse.leshan.core.node.codec.LwM2mDecoder;
 import org.eclipse.leshan.core.node.codec.LwM2mEncoder;
+import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.core.observation.SingleObservation;
 import org.eclipse.leshan.core.request.DownlinkRequest;
+import org.eclipse.leshan.core.request.ObserveCompositeRequest;
+import org.eclipse.leshan.core.request.ObserveRequest;
 import org.eclipse.leshan.core.request.SendRequest;
 import org.eclipse.leshan.core.request.exception.ClientSleepingException;
 import org.eclipse.leshan.core.request.exception.InvalidResponseException;
@@ -125,6 +134,8 @@ public class LeshanServer {
     protected final boolean updateRegistrationOnNotification;
 
     protected final LwM2mLinkParser linkParser;
+
+    private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
 
     /**
      * Initialize a server which will bind to the specified address and port.
@@ -326,11 +337,47 @@ public class LeshanServer {
             public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
                     Registration newReg) {
                 requestSender.cancelOngoingRequests(registration);
+                if (observations != null) {
+                    if (!observations.isEmpty()) {
+                        List<LwM2mPath> paths = new ArrayList<>();
+                        for (Observation obs : observations) {
+                            if (obs instanceof SingleObservation) {
+                                paths.add(((SingleObservation) obs).getPath());
+                            } else if (obs instanceof CompositeObservation) {
+                                paths.addAll(((CompositeObservation) obs).getPaths());
+                            }
+                        }
+                        LOG.info(paths.toString());
+                        observationMemory.put(registration.getEndpoint(), paths);
+                    }
+                    else
+                    {
+                    	observationMemory.remove(registration.getEndpoint());
+                    }
+                }
             }
 
             @Override
             public void registered(Registration registration, Registration previousReg,
                     Collection<Observation> previousObservations) {
+                if (observationMemory.containsKey(registration.getEndpoint())) {
+                    List<LwM2mPath> paths = observationMemory.get(registration.getEndpoint());
+                    if (paths.size() == 1) {
+                        ObserveRequest req = new ObserveRequest(paths.get(0).toString());
+                        try {
+                            send(registration, req);
+                        } catch (InterruptedException e) {
+                            LOG.error(e.getMessage());
+                        }
+                    } else if (paths.size() > 1) {
+                        ObserveCompositeRequest req = new ObserveCompositeRequest(null, null, paths);
+                        try {
+                            send(registration, req);
+                        } catch (InterruptedException e) {
+                            LOG.error(e.getMessage());
+                        }
+                    }
+                }
             }
         });
 
@@ -563,6 +610,7 @@ public class LeshanServer {
      */
     public <T extends LwM2mResponse> T send(Registration destination, DownlinkRequest<T> request,
             LowerLayerConfig lowerLayerConfig, long timeoutInMs) throws InterruptedException {
+        LOG.info("sending request {}", request);
         return requestSender.send(destination, request, lowerLayerConfig, timeoutInMs);
     }
 

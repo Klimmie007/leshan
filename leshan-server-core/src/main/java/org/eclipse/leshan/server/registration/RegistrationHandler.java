@@ -85,7 +85,7 @@ public class RegistrationHandler {
         final Deregistration deregistration = registrationService.getStore().addRegistration(approvedRegistration);
 
         // Create callback to notify new registration and de-registration
-        LOG.debug("New registration: {}", approvedRegistration);
+        LOG.info("New registration: {}", approvedRegistration);
         Runnable whenSent = new Runnable() {
             @Override
             public void run() {
@@ -101,6 +101,7 @@ public class RegistrationHandler {
         };
 
         return new SendableResponse<>(RegisterResponse.success(approvedRegistration.getId()), whenSent);
+        // THAT FUCKER
     }
 
     public SendableResponse<UpdateResponse> update(Identity sender, UpdateRequest updateRequest) {

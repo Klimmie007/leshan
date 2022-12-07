@@ -93,7 +93,7 @@ Contributors:
     <module>leshan-client-cf</module>
 
     <!--  integration tests -->
-    <module>leshan-integration-tests</module>
+    <!--module>leshan-integration-tests</module-->
 
     <!-- demos -->
     <module>leshan-core-demo</module>

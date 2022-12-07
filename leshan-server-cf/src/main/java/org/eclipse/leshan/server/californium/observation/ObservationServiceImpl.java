@@ -118,6 +118,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         }
 
         for (ObservationListener listener : listeners) {
+            LOG.info(observation.toString());
             listener.newObservation(observation, registration);
         }
     }
@@ -264,7 +265,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
 
     @Override
     public void onNotification(Request coapRequest, Response coapResponse) {
-        LOG.trace("notification received for request {}: {}", coapRequest, coapResponse);
+        LOG.info("notification received for request {}: {}", coapRequest, coapResponse);
 
         if (listeners.isEmpty())
             return;

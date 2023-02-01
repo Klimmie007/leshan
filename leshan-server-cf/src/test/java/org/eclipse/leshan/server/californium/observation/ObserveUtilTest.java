@@ -44,13 +44,14 @@ public class ObserveUtilTest {
         // given
         String examplePath = "/1/2/3";
         String exampleRegistrationId = "registrationId";
+        String exampleEndpoint = "ep";
         Token exampleToken = Token.EMPTY;
 
         ObserveRequest observeRequest = new ObserveRequest(null, examplePath);
 
         // when
-        Map<String, String> userContext = ObserveUtil.createCoapObserveRequestContext(null, exampleRegistrationId,
-                observeRequest);
+        Map<String, String> userContext = ObserveUtil.createCoapObserveRequestContext(exampleEndpoint,
+                exampleRegistrationId, observeRequest);
         userContext.put("extraKey", "extraValue");
 
         Request coapRequest = new Request(null);
@@ -62,7 +63,7 @@ public class ObserveUtilTest {
 
         // then
         assertEquals(examplePath, observation.getPath().toString());
-        assertEquals(exampleRegistrationId, observation.getRegistrationId());
+        assertEquals(exampleEndpoint, observation.getEndpoint());
         assertEquals(exampleToken.getBytes(), observation.getId());
         assertTrue(observation.getContext().containsKey("extraKey"));
         assertEquals("extraValue", observation.getContext().get("extraKey"));
@@ -74,12 +75,13 @@ public class ObserveUtilTest {
         // given
         List<LwM2mPath> examplePaths = Arrays.asList(new LwM2mPath("/1/2/3"), new LwM2mPath("/4/5/6"));
         String exampleRegistrationId = "registrationId";
+        String exampleEndpoint = "ep";
         Token exampleToken = Token.EMPTY;
 
         ObserveCompositeRequest observeRequest = new ObserveCompositeRequest(null, null, examplePaths);
 
         // when
-        Map<String, String> userContext = ObserveUtil.createCoapObserveCompositeRequestContext(null,
+        Map<String, String> userContext = ObserveUtil.createCoapObserveCompositeRequestContext(exampleEndpoint,
                 exampleRegistrationId, observeRequest);
         userContext.put("extraKey", "extraValue");
 
@@ -93,7 +95,7 @@ public class ObserveUtilTest {
 
         // then
         assertEquals(examplePaths, observation.getPaths());
-        assertEquals(exampleRegistrationId, observation.getRegistrationId());
+        assertEquals(exampleEndpoint, observation.getEndpoint());
         assertEquals(exampleToken.getBytes(), observation.getId());
         assertTrue(observation.getContext().containsKey("extraKey"));
         assertEquals("extraValue", observation.getContext().get("extraKey"));

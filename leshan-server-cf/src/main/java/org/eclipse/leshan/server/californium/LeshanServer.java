@@ -20,9 +20,7 @@ package org.eclipse.leshan.server.californium;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import org.eclipse.californium.core.CoapResource;
@@ -43,9 +41,7 @@ import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.node.codec.CodecException;
 import org.eclipse.leshan.core.node.codec.LwM2mDecoder;
 import org.eclipse.leshan.core.node.codec.LwM2mEncoder;
-import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.core.observation.SingleObservation;
 import org.eclipse.leshan.core.request.DownlinkRequest;
 import org.eclipse.leshan.core.request.ObserveCompositeRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
@@ -136,7 +132,7 @@ public class LeshanServer {
 
     protected final LwM2mLinkParser linkParser;
 
-    //private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
+    // private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
 
     /**
      * Initialize a server which will bind to the specified address and port.

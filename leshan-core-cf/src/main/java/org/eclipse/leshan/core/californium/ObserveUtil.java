@@ -54,19 +54,19 @@ public class ObserveUtil {
                     "1 path is expected in observe request context but was " + observeCommon.lwm2mPaths);
         }
 
-        return new SingleObservation(request.getToken().getBytes(), observeCommon.regId,
-                observeCommon.lwm2mPaths.get(0), observeCommon.responseContentFormat, observeCommon.context);
+        return new SingleObservation(request.getToken().getBytes(), observeCommon.ep, observeCommon.lwm2mPaths.get(0),
+                observeCommon.responseContentFormat, observeCommon.context);
     }
 
     public static CompositeObservation createLwM2mCompositeObservation(Request request) {
         ObserveCommon observeCommon = new ObserveCommon(request);
 
-        return new CompositeObservation(request.getToken().getBytes(), observeCommon.regId, observeCommon.lwm2mPaths,
+        return new CompositeObservation(request.getToken().getBytes(), observeCommon.ep, observeCommon.lwm2mPaths,
                 observeCommon.requestContentFormat, observeCommon.responseContentFormat, observeCommon.context);
     }
 
     private static class ObserveCommon {
-        String regId;
+        String regId, ep;
         Map<String, String> context;
         List<LwM2mPath> lwm2mPaths;
         ContentFormat requestContentFormat;
@@ -88,6 +88,7 @@ public class ObserveUtil {
                     lwm2mPaths = getPathsFromContext(request.getUserContext());
                     break;
                 case CTX_ENDPOINT:
+                    ep = ctx.getValue();
                     break;
                 default:
                     context.put(ctx.getKey(), ctx.getValue());

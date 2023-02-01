@@ -17,9 +17,13 @@
  *******************************************************************************/
 package org.eclipse.leshan.core.observation;
 
-import org.eclipse.leshan.core.node.LwM2mPath;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import org.eclipse.leshan.core.node.LwM2mPath;
 
 /**
  * An abstract class for observation of a resource provided by a LWM2M Client.

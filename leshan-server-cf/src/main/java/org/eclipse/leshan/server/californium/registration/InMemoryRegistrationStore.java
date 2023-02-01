@@ -118,7 +118,8 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
             // recent binding.
             regsByAddr.put(registration.getSocketAddress(), registration);
             if (registrationRemoved != null) {
-                Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getEndpoint());
+                Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(
+                        registrationRemoved.getEndpoint());
                 if (!registrationRemoved.getSocketAddress().equals(registration.getSocketAddress())) {
                     removeFromMap(regsByAddr, registrationRemoved.getSocketAddress(), registrationRemoved);
                 }
@@ -226,12 +227,9 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
             if (registration != null) {
                 Collection<Observation> observationsRemoved;
                 // TODO potentially also don't remove them on deregistration
-                if(expired)
-                {
+                if (expired) {
                     observationsRemoved = unsafeGetObservations(registration.getEndpoint());
-                }
-                else
-                {
+                } else {
                     observationsRemoved = unsafeRemoveAllObservations(registration.getEndpoint());
                     regsByEp.remove(registration.getEndpoint());
                 }
@@ -259,7 +257,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
 
         try {
             lock.writeLock().lock();
-            // cancel existing observations for the same path and registration id.
+            // cancel existing observations for the same path and endpoint
             for (Observation obs : unsafeGetObservations(endpoint)) {
                 if (areTheSamePaths(observation, obs) && !Arrays.equals(observation.getId(), obs.getId())) {
                     unsafeRemoveObservation(new Token(obs.getId()));
@@ -269,7 +267,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
         } finally {
             lock.writeLock().unlock();
         }
-
+        LOG.error("Removed [{}] paths", removed.size());
         return removed;
     }
 
@@ -284,12 +282,12 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     }
 
     @Override
-    public Observation removeObservation(String registrationId, byte[] observationId) {
+    public Observation removeObservation(String endpoint, byte[] observationId) {
         try {
             lock.writeLock().lock();
             Token token = new Token(observationId);
             Observation observation = build(unsafeGetObservation(token));
-            if (observation != null && registrationId.equals(observation.getRegistrationId())) {
+            if (observation != null && endpoint.equals(observation.getEndpoint())) {
                 unsafeRemoveObservation(token);
                 return observation;
             }
@@ -300,13 +298,14 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     }
 
     @Override
-    public Observation getObservation(String registrationId, byte[] observationId) {
+    public Observation getObservation(String endpoint, byte[] observationId) {
         try {
             lock.readLock().lock();
             Observation observation = build(unsafeGetObservation(new Token(observationId)));
-            if (observation != null && registrationId.equals(observation.getRegistrationId())) {
+            if (observation != null && endpoint.equals(observation.getEndpoint())) {
                 return observation;
             }
+            LOG.error("Didn't find observation [{}] for endpoint [{}]", new String(observationId), endpoint);
             return null;
         } finally {
             lock.readLock().unlock();
@@ -356,7 +355,6 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
 
                 validateObservation(obs);
 
-                String registrationId = ObserveUtil.extractRegistrationId(obs);
                 String endpoint = ObserveUtil.extractEndpoint(obs);
                 if (ifAbsent) {
                     if (!obsByToken.containsKey(token))

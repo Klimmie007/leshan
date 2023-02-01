@@ -101,32 +101,32 @@ public interface RegistrationStore {
      *
      * The store is in charge of removing the observations already existing for the same path and registration id.
      *
-     * @param registrationId the id of the registration
+     * @param endpoint the endpoint of the registration
      * @param observation the observation to add
      *
      * @return the list of removed observations or an empty list if none were removed.
      */
-    Collection<Observation> addObservation(String registrationId, Observation observation);
+    Collection<Observation> addObservation(String endpoint, Observation observation);
 
     /**
-     * Get the observation for the given registration with the given observationId
+     * Get the observation for the given endpoint with the given observationId
      */
-    Observation getObservation(String registrationId, byte[] observationId);
+    Observation getObservation(String endpoint, byte[] observationId);
 
     /**
-     * Remove the observation for the given registration with the given observationId
+     * Remove the observation for the given endpoint with the given observationId
      */
     Observation removeObservation(String endpoint, byte[] observationId);
 
     /**
-     * Get all observations for the given registrationId
+     * Get all observations for the given endpoint
      */
-    Collection<Observation> getObservations(String registrationId);
+    Collection<Observation> getObservations(String endpoint);
 
     /**
-     * Remove all observations for the given registrationId
+     * Remove all observations for the given endpoint
      */
-    Collection<Observation> removeObservations(String registrationId);
+    Collection<Observation> removeObservations(String endpoint);
 
     /**
      * set a listener for registration expiration.

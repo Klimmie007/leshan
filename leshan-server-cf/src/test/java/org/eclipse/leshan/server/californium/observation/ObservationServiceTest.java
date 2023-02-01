@@ -69,8 +69,8 @@ public class ObservationServiceTest {
     public void observe_twice_cancels_first() {
         createDefaultObservationService();
 
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
 
         // check the presence of only one observation.
         Set<Observation> observations = observationService.getObservations(support.registration);
@@ -82,10 +82,10 @@ public class ObservationServiceTest {
         createDefaultObservationService();
 
         // create some observations
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 13));
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 13));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
 
-        givenAnObservation("anotherClient", new LwM2mPath(3, 0, 12));
+        givenAnObservation("anotherClient", "anotherEndpoint", new LwM2mPath(3, 0, 12));
 
         // check its presence
         Set<Observation> observations = observationService.getObservations(support.registration);
@@ -105,11 +105,11 @@ public class ObservationServiceTest {
         createDefaultObservationService();
 
         // create some observations
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 13));
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 13));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
 
-        givenAnObservation("anotherClient", new LwM2mPath(3, 0, 12));
+        givenAnObservation("anotherClient", "anotherEndpoint", new LwM2mPath(3, 0, 12));
 
         // check its presence
         Set<Observation> observations = observationService.getObservations(support.registration);
@@ -129,11 +129,12 @@ public class ObservationServiceTest {
         createDefaultObservationService();
 
         // create some observations
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 13));
-        givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
-        givenAnObservation("anotherClient", new LwM2mPath(3, 0, 12));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 13));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
+        givenAnObservation("anotherClient", "anotherEndpoint", new LwM2mPath(3, 0, 12));
 
-        Observation observationToCancel = givenAnObservation(support.registration.getId(), new LwM2mPath(3, 0, 12));
+        Observation observationToCancel = givenAnObservation(support.registration.getId(),
+                support.registration.getEndpoint(), new LwM2mPath(3, 0, 12));
 
         // check its presence
         Set<Observation> observations = observationService.getObservations(support.registration);
@@ -152,7 +153,7 @@ public class ObservationServiceTest {
         // given
         createDummyDecoderObservationService();
 
-        givenAnObservation(support.registration.getId(), new LwM2mPath("/1/2/3"));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath("/1/2/3"));
 
         Response coapResponse = new Response(CoAP.ResponseCode.CONTENT);
         coapResponse.setToken(coapRequest.getToken());
@@ -176,7 +177,8 @@ public class ObservationServiceTest {
         // given
         createDummyDecoderObservationService();
 
-        givenAnCompositeObservation(support.registration.getId(), new LwM2mPath("/1/2/3"));
+        givenAnCompositeObservation(support.registration.getId(), support.registration.getEndpoint(),
+                new LwM2mPath("/1/2/3"));
 
         Response coapResponse = new Response(CoAP.ResponseCode.CONTENT);
         coapResponse.setToken(coapRequest.getToken());
@@ -203,10 +205,10 @@ public class ObservationServiceTest {
         observationService = new ObservationServiceImpl(store, new StandardModelProvider(), new DefaultLwM2mDecoder());
     }
 
-    private Observation givenAnObservation(String registrationId, LwM2mPath target) {
+    private Observation givenAnObservation(String registrationId, String endpoint, LwM2mPath target) {
         Registration registration = store.getRegistration(registrationId);
         if (registration == null) {
-            registration = givenASimpleClient(registrationId);
+            registration = givenASimpleClient(registrationId, endpoint);
             store.addRegistration(registration);
         }
 
@@ -230,10 +232,10 @@ public class ObservationServiceTest {
         return observation;
     }
 
-    private Observation givenAnCompositeObservation(String registrationId, LwM2mPath target) {
+    private Observation givenAnCompositeObservation(String registrationId, String endpoint, LwM2mPath target) {
         Registration registration = store.getRegistration(registrationId);
         if (registration == null) {
-            registration = givenASimpleClient(registrationId);
+            registration = givenASimpleClient(registrationId, endpoint);
             store.addRegistration(registration);
         }
 
@@ -253,10 +255,10 @@ public class ObservationServiceTest {
         return observation;
     }
 
-    private Registration givenASimpleClient(String registrationId) {
+    private Registration givenASimpleClient(String registrationId, String endpoint) {
         Registration.Builder builder;
         try {
-            builder = new Registration.Builder(registrationId, registrationId + "_ep",
+            builder = new Registration.Builder(registrationId, endpoint,
                     Identity.unsecure(InetAddress.getLocalHost(), 10000));
             return builder.build();
         } catch (UnknownHostException e) {

@@ -43,8 +43,8 @@ public class CompositeObservation extends Observation {
      * @param responseContentFormat The {@link ContentFormat} requested to encode the {@link LwM2mNode} of the response.
      * @param context additional information relative to this observation.
      */
-    public CompositeObservation(byte[] id, String endpoint, List<LwM2mPath> paths,
-            ContentFormat requestContentFormat, ContentFormat responseContentFormat, Map<String, String> context) {
+    public CompositeObservation(byte[] id, String endpoint, List<LwM2mPath> paths, ContentFormat requestContentFormat,
+            ContentFormat responseContentFormat, Map<String, String> context) {
         super(id, endpoint, context);
         this.requestContentFormat = requestContentFormat;
         this.responseContentFormat = responseContentFormat;

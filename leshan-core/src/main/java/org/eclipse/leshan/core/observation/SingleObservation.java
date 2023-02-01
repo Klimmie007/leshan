@@ -62,8 +62,7 @@ public class SingleObservation extends Observation {
         return pathWrapped;
     }
 
-    public LwM2mPath getPath()
-    {
+    public LwM2mPath getPath() {
         return path;
     }
 
@@ -78,8 +77,8 @@ public class SingleObservation extends Observation {
 
     @Override
     public String toString() {
-        return String.format("SingleObservation [path=%s, id=%s, contentFormat=%s, endpoint=%s, context=%s]",
-                path, Hex.encodeHexString(id), contentFormat, endpoint, context);
+        return String.format("SingleObservation [path=%s, id=%s, contentFormat=%s, endpoint=%s, context=%s]", path,
+                Hex.encodeHexString(id), contentFormat, endpoint, context);
     }
 
     @Override

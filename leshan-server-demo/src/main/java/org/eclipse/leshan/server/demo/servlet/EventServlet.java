@@ -224,7 +224,7 @@ public class EventServlet extends EventSourceServlet {
         @Override
         public void onError(Observation observation, Registration registration, Exception error) {
             if (LOG.isWarnEnabled()) {
-                LOG.warn(String.format("Unable to handle notification of [%s:%s]", observation.getRegistrationId(),
+                LOG.warn(String.format("Unable to handle notification of [%s:%s]", observation.getEndpoint(),
                         getObservationPaths(observation)), error);
             }
         }

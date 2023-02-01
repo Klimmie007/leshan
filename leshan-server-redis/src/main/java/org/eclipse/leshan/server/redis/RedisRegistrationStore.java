@@ -43,9 +43,7 @@ import org.eclipse.leshan.core.Destroyable;
 import org.eclipse.leshan.core.Startable;
 import org.eclipse.leshan.core.Stoppable;
 import org.eclipse.leshan.core.californium.ObserveUtil;
-import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.core.observation.SingleObservation;
 import org.eclipse.leshan.core.request.Identity;
 import org.eclipse.leshan.core.util.NamedThreadFactory;
 import org.eclipse.leshan.core.util.Validate;
@@ -390,7 +388,8 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
         }
     }
 
-    private Deregistration removeRegistration(Jedis j, String registrationId, boolean removeOnlyIfNotAlive, boolean expired) {
+    private Deregistration removeRegistration(Jedis j, String registrationId, boolean removeOnlyIfNotAlive,
+            boolean expired) {
         // fetch the client ep by registration ID index
         byte[] ep = j.get(toRegIdKey(registrationId));
         if (ep == null) {
@@ -414,12 +413,9 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
                 if (nbRemoved > 0) {
                     j.del(toEndpointKey(r.getEndpoint()));
                     Collection<Observation> obsRemoved;
-                    if(expired)
-                    {
+                    if (expired) {
                         obsRemoved = getObservations(j, r.getEndpoint());
-                    }
-                    else
-                    {
+                    } else {
                         obsRemoved = unsafeRemoveAllObservations(j, r.getEndpoint());
                     }
                     removeAddrIndex(j, r);
@@ -537,13 +533,7 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
     }
 
     private boolean areTheSamePaths(Observation observation, Observation obs) {
-        if (observation instanceof SingleObservation && obs instanceof SingleObservation) {
-            return ((SingleObservation) observation).getPath().equals(((SingleObservation) obs).getPath());
-        }
-        if (observation instanceof CompositeObservation && obs instanceof CompositeObservation) {
-            return ((CompositeObservation) observation).getPaths().equals(((CompositeObservation) obs).getPaths());
-        }
-        return false;
+        return observation.getPaths().equals(obs.getPaths());
     }
 
     @Override

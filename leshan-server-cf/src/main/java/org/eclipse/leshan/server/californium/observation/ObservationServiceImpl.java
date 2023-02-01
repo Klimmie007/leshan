@@ -135,7 +135,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
     public int cancelObservations(Registration registration) {
 
         String endpoint = registration.getEndpoint();
-        if(endpoint == null)
+        if (endpoint == null)
             return 0;
 
         Collection<Observation> observations = registrationStore.removeObservations(endpoint);
@@ -199,11 +199,11 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         return getObservations(registration.getEndpoint());
     }
 
-    private Set<Observation> getObservations(String registrationId) {
-        if (registrationId == null)
+    private Set<Observation> getObservations(String endpoint) {
+        if (endpoint == null)
             return Collections.emptySet();
 
-        return new HashSet<>(registrationStore.getObservations(registrationId));
+        return new HashSet<>(registrationStore.getObservations(endpoint));
     }
 
     private Set<Observation> getCompositeObservations(String endpoint, String[] nodePaths) {
@@ -270,17 +270,17 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         if (listeners.isEmpty())
             return;
 
-        // get registration Id
-        String regid = coapRequest.getUserContext().get(ObserveUtil.CTX_REGID);
-
         // get endpoint
         String endpoint = coapRequest.getUserContext().get(ObserveUtil.CTX_ENDPOINT);
+
+        //get registrationID
+        String registrationID = coapRequest.getUserContext().get(ObserveUtil.CTX_REGID);
 
         // get observation for this request
         Observation observation = registrationStore.getObservation(endpoint, coapResponse.getToken().getBytes());
         if (observation == null) {
-            LOG.error("Unexpected error: Unable to find observation with token {} for registration {}",
-                    coapResponse.getToken(), regid);
+            LOG.error("Unexpected error: Unable to find observation with token {} for endpoint {}",
+                    coapResponse.getToken(), endpoint);
             return;
         }
 
@@ -288,8 +288,8 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         Registration registration;
         if (updateRegistrationOnNotification) {
             Identity obsIdentity = EndpointContextUtil.extractIdentity(coapResponse.getSourceContext());
-            RegistrationUpdate regUpdate = new RegistrationUpdate(observation.getEndpoint(), obsIdentity, null,
-                    null, null, null, null, null);
+            RegistrationUpdate regUpdate = new RegistrationUpdate(registrationID, obsIdentity, null, null, null,
+                    null, null, null);
             UpdatedRegistration updatedRegistration = registrationStore.updateRegistration(regUpdate);
             if (updatedRegistration == null || updatedRegistration.getUpdatedRegistration() == null) {
                 LOG.error("Unexpected error: There is no registration with endpoint {} for this observation {}",
@@ -298,7 +298,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
             }
             registration = updatedRegistration.getUpdatedRegistration();
         } else {
-            registration = registrationStore.getRegistration(observation.getEndpoint());
+            registration = registrationStore.getRegistration(registrationID);
             if (registration == null) {
                 LOG.error("Unexpected error: There is no registration with endpoint {} for this observation {}",
                         observation.getEndpoint(), observation);

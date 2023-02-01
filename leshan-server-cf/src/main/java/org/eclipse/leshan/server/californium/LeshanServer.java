@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -135,7 +136,7 @@ public class LeshanServer {
 
     protected final LwM2mLinkParser linkParser;
 
-    private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
+    //private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
 
     /**
      * Initialize a server which will bind to the specified address and port.
@@ -337,31 +338,19 @@ public class LeshanServer {
             public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
                     Registration newReg) {
                 requestSender.cancelOngoingRequests(registration);
-                if (observations != null) {
-                    if (!observations.isEmpty()) {
-                        List<LwM2mPath> paths = new ArrayList<>();
-                        for (Observation obs : observations) {
-                            if (obs instanceof SingleObservation) {
-                                paths.add(((SingleObservation) obs).getPath());
-                            } else if (obs instanceof CompositeObservation) {
-                                paths.addAll(((CompositeObservation) obs).getPaths());
-                            }
-                        }
-                        LOG.info(paths.toString());
-                        observationMemory.put(registration.getEndpoint(), paths);
-                    }
-                    else
-                    {
-                    	observationMemory.remove(registration.getEndpoint());
-                    }
-                }
             }
 
             @Override
             public void registered(Registration registration, Registration previousReg,
                     Collection<Observation> previousObservations) {
-                if (observationMemory.containsKey(registration.getEndpoint())) {
-                    List<LwM2mPath> paths = observationMemory.get(registration.getEndpoint());
+                if (!previousObservations.isEmpty()) {
+                    List<LwM2mPath> paths = new ArrayList<>();
+                    previousObservations.forEach(new Consumer<Observation>() {
+                        @Override
+                        public void accept(Observation observation) {
+                            paths.addAll(observation.getPaths());
+                        }
+                    });
                     if (paths.size() == 1) {
                         ObserveRequest req = new ObserveRequest(paths.get(0).toString());
                         try {

@@ -37,15 +37,15 @@ public class CompositeObservation extends Observation {
      * Instantiates an {@link CompositeObservation} for the given node paths.
      *
      * @param id token identifier of the observation
-     * @param registrationId client's unique registration identifier.
+     * @param endpoint client's endpoint (public name treated like IMEI).
      * @param paths resources paths for which the composite-observation is set.
      * @param requestContentFormat The {@link ContentFormat} used to encode the list of {@link LwM2mPath}
      * @param responseContentFormat The {@link ContentFormat} requested to encode the {@link LwM2mNode} of the response.
      * @param context additional information relative to this observation.
      */
-    public CompositeObservation(byte[] id, String registrationId, List<LwM2mPath> paths,
+    public CompositeObservation(byte[] id, String endpoint, List<LwM2mPath> paths,
             ContentFormat requestContentFormat, ContentFormat responseContentFormat, Map<String, String> context) {
-        super(id, registrationId, context);
+        super(id, endpoint, context);
         this.requestContentFormat = requestContentFormat;
         this.responseContentFormat = responseContentFormat;
         this.paths = paths;
@@ -70,6 +70,7 @@ public class CompositeObservation extends Observation {
      *
      * @return the resources paths
      */
+    @Override
     public List<LwM2mPath> getPaths() {
         return paths;
     }
@@ -77,8 +78,8 @@ public class CompositeObservation extends Observation {
     @Override
     public String toString() {
         return String.format(
-                "CompositeObservation [paths=%s, id=%s, requestContentFormat=%s, responseContentFormat=%s, registrationId=%s, context=%s]",
-                paths, Hex.encodeHexString(id), requestContentFormat, responseContentFormat, registrationId, context);
+                "CompositeObservation [paths=%s, id=%s, requestContentFormat=%s, responseContentFormat=%s, endpoint=%s, context=%s]",
+                paths, Hex.encodeHexString(id), requestContentFormat, responseContentFormat, endpoint, context);
     }
 
     @Override

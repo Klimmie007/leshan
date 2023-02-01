@@ -91,9 +91,10 @@ public interface RegistrationStore {
      * Remove the registration with the given registration Id
      *
      * @param registrationId the id of the registration to removed
+     * @param expired did the registration expire
      * @return the registration and observations removed or null if there is no registration for this Id.
      */
-    Deregistration removeRegistration(String registrationId);
+    Deregistration removeRegistration(String registrationId, boolean expired);
 
     /**
      * Add a new {@link Observation} for a given registration.
@@ -115,7 +116,7 @@ public interface RegistrationStore {
     /**
      * Remove the observation for the given registration with the given observationId
      */
-    Observation removeObservation(String registrationId, byte[] observationId);
+    Observation removeObservation(String endpoint, byte[] observationId);
 
     /**
      * Get all observations for the given registrationId

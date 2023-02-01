@@ -67,8 +67,9 @@ public interface ObservationService {
      * the canceled observation.
      *
      * @param observation the observation to cancel.
+     * @param endpoint endpoint of the observation
      */
-    void cancelObservation(Observation observation);
+    void cancelObservation(Observation observation, String endpoint);
 
     /**
      * Get all running observation for a given registration

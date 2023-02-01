@@ -17,6 +17,8 @@
  *******************************************************************************/
 package org.eclipse.leshan.core.observation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.leshan.core.node.LwM2mPath;
@@ -36,14 +38,14 @@ public class SingleObservation extends Observation {
      * Instantiates an {@link SingleObservation} for the given node path.
      *
      * @param id token identifier of the observation
-     * @param registrationId client's unique registration identifier.
+     * @param endpoint client's endpoint (public name treated like IMEI).
      * @param path resource path for which the observation is set.
      * @param contentFormat contentFormat used to read the resource (could be null).
      * @param context additional information relative to this observation.
      */
-    public SingleObservation(byte[] id, String registrationId, LwM2mPath path, ContentFormat contentFormat,
+    public SingleObservation(byte[] id, String endpoint, LwM2mPath path, ContentFormat contentFormat,
             Map<String, String> context) {
-        super(id, registrationId, context);
+        super(id, endpoint, context);
         this.path = path;
         this.contentFormat = contentFormat;
     }
@@ -53,7 +55,15 @@ public class SingleObservation extends Observation {
      *
      * @return the resource path
      */
-    public LwM2mPath getPath() {
+    @Override
+    public List<LwM2mPath> getPaths() {
+        List<LwM2mPath> pathWrapped = new ArrayList<>();
+        pathWrapped.add(path);
+        return pathWrapped;
+    }
+
+    public LwM2mPath getPath()
+    {
         return path;
     }
 
@@ -68,8 +78,8 @@ public class SingleObservation extends Observation {
 
     @Override
     public String toString() {
-        return String.format("SingleObservation [path=%s, id=%s, contentFormat=%s, registrationId=%s, context=%s]",
-                path, Hex.encodeHexString(id), contentFormat, registrationId, context);
+        return String.format("SingleObservation [path=%s, id=%s, contentFormat=%s, endpoint=%s, context=%s]",
+                path, Hex.encodeHexString(id), contentFormat, endpoint, context);
     }
 
     @Override

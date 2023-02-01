@@ -17,10 +17,9 @@
  *******************************************************************************/
 package org.eclipse.leshan.core.observation;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import org.eclipse.leshan.core.node.LwM2mPath;
+
+import java.util.*;
 
 /**
  * An abstract class for observation of a resource provided by a LWM2M Client.
@@ -28,19 +27,19 @@ import java.util.Map;
 public abstract class Observation {
 
     protected final byte[] id;
-    protected final String registrationId;
+    protected final String endpoint;
     protected final Map<String, String> context;
 
     /**
      * An abstract constructor for {@link Observation}.
      *
      * @param id token identifier of the observation
-     * @param registrationId client's unique registration identifier.
+     * @param endpoint client's endpoint (public name treated like IMEI).
      * @param context additional information relative to this observation.
      */
-    public Observation(byte[] id, String registrationId, Map<String, String> context) {
+    public Observation(byte[] id, String endpoint, Map<String, String> context) {
         this.id = id;
-        this.registrationId = registrationId;
+        this.endpoint = endpoint;
         if (context != null)
             this.context = Collections.unmodifiableMap(new HashMap<>(context));
         else
@@ -60,8 +59,8 @@ public abstract class Observation {
      *
      * @return the registration ID
      */
-    public String getRegistrationId() {
-        return registrationId;
+    public String getEndpoint() {
+        return endpoint;
     }
 
     /**
@@ -77,7 +76,7 @@ public abstract class Observation {
         int result = 1;
         result = prime * result + ((context == null) ? 0 : context.hashCode());
         result = prime * result + Arrays.hashCode(id);
-        result = prime * result + ((registrationId == null) ? 0 : registrationId.hashCode());
+        result = prime * result + ((endpoint == null) ? 0 : endpoint.hashCode());
         return result;
     }
 
@@ -97,12 +96,13 @@ public abstract class Observation {
             return false;
         if (!Arrays.equals(id, other.id))
             return false;
-        if (registrationId == null) {
-            if (other.registrationId != null)
+        if (endpoint == null) {
+            if (other.endpoint != null)
                 return false;
-        } else if (!registrationId.equals(other.registrationId))
+        } else if (!endpoint.equals(other.endpoint))
             return false;
         return true;
     }
 
+    public abstract List<LwM2mPath> getPaths();
 }

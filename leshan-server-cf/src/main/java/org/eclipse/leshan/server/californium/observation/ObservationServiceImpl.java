@@ -113,7 +113,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
     }
 
     public void addObservation(Registration registration, Observation observation) {
-        for (Observation existing : registrationStore.addObservation(registration.getId(), observation)) {
+        for (Observation existing : registrationStore.addObservation(registration.getEndpoint(), observation)) {
             cancel(existing);
         }
 
@@ -133,12 +133,12 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
 
     @Override
     public int cancelObservations(Registration registration) {
-        // check registration id
-        String registrationId = registration.getId();
-        if (registrationId == null)
+
+        String endpoint = registration.getEndpoint();
+        if(endpoint == null)
             return 0;
 
-        Collection<Observation> observations = registrationStore.removeObservations(registrationId);
+        Collection<Observation> observations = registrationStore.removeObservations(endpoint);
         if (observations == null)
             return 0;
 
@@ -154,9 +154,9 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         if (registration == null || registration.getId() == null || nodePath == null || nodePath.isEmpty())
             return 0;
 
-        Set<Observation> observations = getObservations(registration.getId(), nodePath);
+        Set<Observation> observations = getObservations(registration.getEndpoint(), nodePath);
         for (Observation observation : observations) {
-            cancelObservation(observation);
+            cancelObservation(observation, registration.getEndpoint());
         }
         return observations.size();
     }
@@ -166,19 +166,19 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         if (registration == null || registration.getId() == null || nodePaths == null || nodePaths.length == 0)
             return 0;
 
-        Set<Observation> observations = getCompositeObservations(registration.getId(), nodePaths);
+        Set<Observation> observations = getCompositeObservations(registration.getEndpoint(), nodePaths);
         for (Observation observation : observations) {
-            cancelObservation(observation);
+            cancelObservation(observation, registration.getEndpoint());
         }
         return observations.size();
     }
 
     @Override
-    public void cancelObservation(Observation observation) {
+    public void cancelObservation(Observation observation, String endpoint) {
         if (observation == null)
             return;
 
-        registrationStore.removeObservation(observation.getRegistrationId(), observation.getId());
+        registrationStore.removeObservation(endpoint, observation.getId());
         cancel(observation);
     }
 
@@ -196,7 +196,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
 
     @Override
     public Set<Observation> getObservations(Registration registration) {
-        return getObservations(registration.getId());
+        return getObservations(registration.getEndpoint());
     }
 
     private Set<Observation> getObservations(String registrationId) {
@@ -206,8 +206,8 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         return new HashSet<>(registrationStore.getObservations(registrationId));
     }
 
-    private Set<Observation> getCompositeObservations(String registrationId, String[] nodePaths) {
-        if (registrationId == null || nodePaths == null)
+    private Set<Observation> getCompositeObservations(String endpoint, String[] nodePaths) {
+        if (endpoint == null || nodePaths == null)
             return Collections.emptySet();
 
         // array of String to array of LWM2M path
@@ -218,7 +218,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
 
         // search composite-observation
         Set<Observation> result = new HashSet<>();
-        for (Observation obs : getObservations(registrationId)) {
+        for (Observation obs : getObservations(endpoint)) {
             if (obs instanceof CompositeObservation) {
                 if (lwPaths.equals(((CompositeObservation) obs).getPaths())) {
                     result.add(obs);
@@ -228,13 +228,13 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         return result;
     }
 
-    private Set<Observation> getObservations(String registrationId, String nodePath) {
-        if (registrationId == null || nodePath == null)
+    private Set<Observation> getObservations(String endpoint, String nodePath) {
+        if (endpoint == null || nodePath == null)
             return Collections.emptySet();
 
         Set<Observation> result = new HashSet<>();
         LwM2mPath lwPath = new LwM2mPath(nodePath);
-        for (Observation obs : getObservations(registrationId)) {
+        for (Observation obs : getObservations(endpoint)) {
             if (obs instanceof SingleObservation) {
                 if (lwPath.equals(((SingleObservation) obs).getPath())) {
                     result.add(obs);
@@ -273,8 +273,11 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         // get registration Id
         String regid = coapRequest.getUserContext().get(ObserveUtil.CTX_REGID);
 
+        // get endpoint
+        String endpoint = coapRequest.getUserContext().get(ObserveUtil.CTX_ENDPOINT);
+
         // get observation for this request
-        Observation observation = registrationStore.getObservation(regid, coapResponse.getToken().getBytes());
+        Observation observation = registrationStore.getObservation(endpoint, coapResponse.getToken().getBytes());
         if (observation == null) {
             LOG.error("Unexpected error: Unable to find observation with token {} for registration {}",
                     coapResponse.getToken(), regid);
@@ -285,20 +288,20 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         Registration registration;
         if (updateRegistrationOnNotification) {
             Identity obsIdentity = EndpointContextUtil.extractIdentity(coapResponse.getSourceContext());
-            RegistrationUpdate regUpdate = new RegistrationUpdate(observation.getRegistrationId(), obsIdentity, null,
+            RegistrationUpdate regUpdate = new RegistrationUpdate(observation.getEndpoint(), obsIdentity, null,
                     null, null, null, null, null);
             UpdatedRegistration updatedRegistration = registrationStore.updateRegistration(regUpdate);
             if (updatedRegistration == null || updatedRegistration.getUpdatedRegistration() == null) {
-                LOG.error("Unexpected error: There is no registration with id {} for this observation {}",
-                        observation.getRegistrationId(), observation);
+                LOG.error("Unexpected error: There is no registration with endpoint {} for this observation {}",
+                        observation.getEndpoint(), observation);
                 return;
             }
             registration = updatedRegistration.getUpdatedRegistration();
         } else {
-            registration = registrationStore.getRegistration(observation.getRegistrationId());
+            registration = registrationStore.getRegistration(observation.getEndpoint());
             if (registration == null) {
-                LOG.error("Unexpected error: There is no registration with id {} for this observation {}",
-                        observation.getRegistrationId(), observation);
+                LOG.error("Unexpected error: There is no registration with endpoint {} for this observation {}",
+                        observation.getEndpoint(), observation);
                 return;
             }
         }

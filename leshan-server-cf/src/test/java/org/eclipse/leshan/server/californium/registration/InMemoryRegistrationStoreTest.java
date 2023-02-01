@@ -144,7 +144,7 @@ public class InMemoryRegistrationStoreTest {
         store.put(exampleToken, observationToStore);
 
         // then
-        Observation leshanObservation = store.getObservation(registrationId, exampleToken.getBytes());
+        Observation leshanObservation = store.getObservation(ep, exampleToken.getBytes());
         assertNotNull(leshanObservation);
         assertTrue(leshanObservation instanceof SingleObservation);
         SingleObservation observation = (SingleObservation) leshanObservation;
@@ -163,7 +163,7 @@ public class InMemoryRegistrationStoreTest {
         store.put(exampleToken, observationToStore);
 
         // then
-        Observation leshanObservation = store.getObservation(registrationId, exampleToken.getBytes());
+        Observation leshanObservation = store.getObservation(ep, exampleToken.getBytes());
         assertNotNull(leshanObservation);
         assertTrue(leshanObservation instanceof CompositeObservation);
         CompositeObservation observation = (CompositeObservation) leshanObservation;

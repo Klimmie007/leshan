@@ -161,7 +161,7 @@ public class RegistrationHandler {
         }
 
         final Deregistration deregistration = registrationService.getStore()
-                .removeRegistration(deregisterRequest.getRegistrationId());
+                .removeRegistration(deregisterRequest.getRegistrationId(), false);
 
         if (deregistration != null) {
             LOG.debug("Deregistered client: {}", deregistration.getRegistration());

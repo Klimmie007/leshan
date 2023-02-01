@@ -140,7 +140,7 @@ public class ObservationServiceTest {
         Assert.assertEquals(2, observations.size());
 
         // cancel it
-        observationService.cancelObservation(observationToCancel);
+        observationService.cancelObservation(observationToCancel, support.registration.getEndpoint());
 
         // check its absence
         observations = observationService.getObservations(support.registration);

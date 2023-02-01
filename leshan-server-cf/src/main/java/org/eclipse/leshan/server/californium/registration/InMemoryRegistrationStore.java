@@ -77,7 +77,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     private final Map<String /* reg-id */, Registration> regsByRegId = new HashMap<>();
     private final Map<Identity, Registration> regsByIdentity = new HashMap<>();
     private Map<Token, org.eclipse.californium.core.observe.Observation> obsByToken = new HashMap<>();
-    private Map<String, Set<Token>> tokensByRegId = new HashMap<>();
+    private Map<String /* end-point */, Set<Token>> tokensByEp = new HashMap<>();
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -118,7 +118,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
             // recent binding.
             regsByAddr.put(registration.getSocketAddress(), registration);
             if (registrationRemoved != null) {
-                Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getId());
+                Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getEndpoint());
                 if (!registrationRemoved.getSocketAddress().equals(registration.getSocketAddress())) {
                     removeFromMap(regsByAddr, registrationRemoved.getSocketAddress(), registrationRemoved);
                 }
@@ -218,14 +218,23 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     }
 
     @Override
-    public Deregistration removeRegistration(String registrationId) {
+    public Deregistration removeRegistration(String registrationId, boolean expired) {
         try {
             lock.writeLock().lock();
 
             Registration registration = getRegistration(registrationId);
             if (registration != null) {
-                Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registration.getId());
-                regsByEp.remove(registration.getEndpoint());
+                Collection<Observation> observationsRemoved;
+                // TODO potentially also don't remove them on deregistration
+                if(expired)
+                {
+                    observationsRemoved = unsafeGetObservations(registration.getEndpoint());
+                }
+                else
+                {
+                    observationsRemoved = unsafeRemoveAllObservations(registration.getEndpoint());
+                    regsByEp.remove(registration.getEndpoint());
+                }
                 removeFromMap(regsByAddr, registration.getSocketAddress(), registration);
                 removeFromMap(regsByRegId, registration.getId(), registration);
                 removeFromMap(regsByIdentity, registration.getIdentity(), registration);
@@ -244,14 +253,14 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
      * org.eclipse.californium.core.observe.ObservationStore#add method)
      */
     @Override
-    public Collection<Observation> addObservation(String registrationId, Observation observation) {
+    public Collection<Observation> addObservation(String endpoint, Observation observation) {
 
         List<Observation> removed = new ArrayList<>();
 
         try {
             lock.writeLock().lock();
             // cancel existing observations for the same path and registration id.
-            for (Observation obs : unsafeGetObservations(registrationId)) {
+            for (Observation obs : unsafeGetObservations(endpoint)) {
                 if (areTheSamePaths(observation, obs) && !Arrays.equals(observation.getId(), obs.getId())) {
                     unsafeRemoveObservation(new Token(obs.getId()));
                     removed.add(obs);
@@ -305,20 +314,20 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     }
 
     @Override
-    public Collection<Observation> getObservations(String registrationId) {
+    public Collection<Observation> getObservations(String endpoint) {
         try {
             lock.readLock().lock();
-            return unsafeGetObservations(registrationId);
+            return unsafeGetObservations(endpoint);
         } finally {
             lock.readLock().unlock();
         }
     }
 
     @Override
-    public Collection<Observation> removeObservations(String registrationId) {
+    public Collection<Observation> removeObservations(String endpoint) {
         try {
             lock.writeLock().lock();
-            return unsafeRemoveAllObservations(registrationId);
+            return unsafeRemoveAllObservations(endpoint);
         } finally {
             lock.writeLock().unlock();
         }
@@ -348,6 +357,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
                 validateObservation(obs);
 
                 String registrationId = ObserveUtil.extractRegistrationId(obs);
+                String endpoint = ObserveUtil.extractEndpoint(obs);
                 if (ifAbsent) {
                     if (!obsByToken.containsKey(token))
                         previousObservation = obsByToken.put(token, obs);
@@ -356,10 +366,10 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
                 } else {
                     previousObservation = obsByToken.put(token, obs);
                 }
-                if (!tokensByRegId.containsKey(registrationId)) {
-                    tokensByRegId.put(registrationId, new HashSet<Token>());
+                if (!tokensByEp.containsKey(endpoint)) {
+                    tokensByEp.put(endpoint, new HashSet<Token>());
                 }
-                tokensByRegId.get(registrationId).add(token);
+                tokensByEp.get(endpoint).add(token);
 
                 // log any collisions
                 if (previousObservation != null) {
@@ -418,18 +428,18 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
         org.eclipse.californium.core.observe.Observation removed = obsByToken.remove(observationId);
 
         if (removed != null) {
-            String registrationId = ObserveUtil.extractRegistrationId(removed);
-            Set<Token> tokens = tokensByRegId.get(registrationId);
+            String endpoint = ObserveUtil.extractEndpoint(removed);
+            Set<Token> tokens = tokensByEp.get(endpoint);
             tokens.remove(observationId);
             if (tokens.isEmpty()) {
-                tokensByRegId.remove(registrationId);
+                tokensByEp.remove(endpoint);
             }
         }
     }
 
-    private Collection<Observation> unsafeRemoveAllObservations(String registrationId) {
+    private Collection<Observation> unsafeRemoveAllObservations(String endpoint) {
         Collection<Observation> removed = new ArrayList<>();
-        Set<Token> tokens = tokensByRegId.get(registrationId);
+        Set<Token> tokens = tokensByEp.get(endpoint);
         if (tokens != null) {
             for (Token token : tokens) {
                 Observation observationRemoved = build(obsByToken.remove(token));
@@ -438,13 +448,13 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
                 }
             }
         }
-        tokensByRegId.remove(registrationId);
+        tokensByEp.remove(endpoint);
         return removed;
     }
 
-    private Collection<Observation> unsafeGetObservations(String registrationId) {
+    private Collection<Observation> unsafeGetObservations(String endpoint) {
         Collection<Observation> result = new ArrayList<>();
-        Set<Token> tokens = tokensByRegId.get(registrationId);
+        Set<Token> tokens = tokensByEp.get(endpoint);
         if (tokens != null) {
             for (Token token : tokens) {
                 Observation obs = build(unsafeGetObservation(token));
@@ -541,7 +551,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
                 for (Registration reg : allRegs) {
                     if (!reg.isAlive()) {
                         // force de-registration
-                        Deregistration removedRegistration = removeRegistration(reg.getId());
+                        Deregistration removedRegistration = removeRegistration(reg.getId(), true);
                         expirationListener.registrationExpired(removedRegistration.getRegistration(),
                                 removedRegistration.getObservations());
                     }

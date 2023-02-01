@@ -87,7 +87,7 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
     private static final String REG_EP_IDENTITY = "EP:IDENTITY:"; // secondary index key (Identity => Endpoint)
     private static final String LOCK_EP = "LOCK:EP:";
     private static final byte[] OBS_TKN = "OBS:TKN:".getBytes(UTF_8);
-    private static final String OBS_TKNS_REGID_IDX = "TKNS:REGID:"; // secondary index (token list by registration)
+    private static final String OBS_TKNS_EP = "TKNS:EP:"; // secondary index (token list by endpoint)
     private static final byte[] EXP_EP = "EXP:EP".getBytes(UTF_8); // a sorted set used for registration expiration
                                                                    // (expiration date, Endpoint)
 
@@ -198,7 +198,7 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
                         removeIdentityIndex(j, oldRegistration);
                     }
                     // remove old observation
-                    Collection<Observation> obsRemoved = unsafeRemoveAllObservations(j, oldRegistration.getId());
+                    Collection<Observation> obsRemoved = unsafeRemoveAllObservations(j, oldRegistration.getEndpoint());
 
                     return new Deregistration(oldRegistration, obsRemoved);
                 }
@@ -384,13 +384,13 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
     }
 
     @Override
-    public Deregistration removeRegistration(String registrationId) {
+    public Deregistration removeRegistration(String registrationId, boolean expired) {
         try (Jedis j = pool.getResource()) {
-            return removeRegistration(j, registrationId, false);
+            return removeRegistration(j, registrationId, false, expired);
         }
     }
 
-    private Deregistration removeRegistration(Jedis j, String registrationId, boolean removeOnlyIfNotAlive) {
+    private Deregistration removeRegistration(Jedis j, String registrationId, boolean removeOnlyIfNotAlive, boolean expired) {
         // fetch the client ep by registration ID index
         byte[] ep = j.get(toRegIdKey(registrationId));
         if (ep == null) {
@@ -413,7 +413,15 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
                 long nbRemoved = j.del(toRegIdKey(r.getId()));
                 if (nbRemoved > 0) {
                     j.del(toEndpointKey(r.getEndpoint()));
-                    Collection<Observation> obsRemoved = unsafeRemoveAllObservations(j, r.getId());
+                    Collection<Observation> obsRemoved;
+                    if(expired)
+                    {
+                        obsRemoved = getObservations(j, r.getEndpoint());
+                    }
+                    else
+                    {
+                        obsRemoved = unsafeRemoveAllObservations(j, r.getEndpoint());
+                    }
                     removeAddrIndex(j, r);
                     removeIdentityIndex(j, r);
                     removeExpiration(j, r);
@@ -496,28 +504,28 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
      * org.eclipse.californium.core.observe.ObservationStore#add method)
      */
     @Override
-    public Collection<Observation> addObservation(String registrationId, Observation observation) {
+    public Collection<Observation> addObservation(String endpoint, Observation observation) {
 
         List<Observation> removed = new ArrayList<>();
         try (Jedis j = pool.getResource()) {
 
             // fetch the client ep by registration ID index
-            byte[] ep = j.get(toRegIdKey(registrationId));
+            byte[] ep = j.get(toEndpointKey(endpoint));
             if (ep == null) {
                 return null;
             }
 
             byte[] lockValue = null;
-            byte[] lockKey = toLockKey(ep);
+            byte[] lockKey = toLockKey(endpoint);
 
             try {
                 lockValue = lock.acquire(j, lockKey);
 
                 // cancel existing observations for the same path and registration id.
-                for (Observation obs : getObservations(j, registrationId)) {
+                for (Observation obs : getObservations(j, endpoint)) {
                     if (areTheSamePaths(observation, obs) && !Arrays.equals(observation.getId(), obs.getId())) {
                         removed.add(obs);
-                        unsafeRemoveObservation(j, registrationId, obs.getId());
+                        unsafeRemoveObservation(j, endpoint, obs.getId());
                     }
                 }
 
@@ -539,24 +547,24 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
     }
 
     @Override
-    public Observation removeObservation(String registrationId, byte[] observationId) {
+    public Observation removeObservation(String endpoint, byte[] observationId) {
         try (Jedis j = pool.getResource()) {
 
             // fetch the client ep by registration ID index
-            byte[] ep = j.get(toRegIdKey(registrationId));
+            byte[] ep = j.get(toEndpointKey(endpoint));
             if (ep == null) {
                 return null;
             }
 
             // remove observation
             byte[] lockValue = null;
-            byte[] lockKey = toLockKey(ep);
+            byte[] lockKey = toLockKey(endpoint);
             try {
                 lockValue = lock.acquire(j, lockKey);
 
                 Observation observation = build(get(new Token(observationId)));
-                if (observation != null && registrationId.equals(observation.getRegistrationId())) {
-                    unsafeRemoveObservation(j, registrationId, observationId);
+                if (observation != null && !observation.getEndpoint().equals(endpoint)) {
+                    unsafeRemoveObservation(j, endpoint, observationId);
                     return observation;
                 }
                 return null;
@@ -579,9 +587,9 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
         }
     }
 
-    private Collection<Observation> getObservations(Jedis j, String registrationId) {
+    private Collection<Observation> getObservations(Jedis j, String endpoint) {
         Collection<Observation> result = new ArrayList<>();
-        for (byte[] token : j.lrange(toKey(OBS_TKNS_REGID_IDX, registrationId), 0, -1)) {
+        for (byte[] token : j.lrange(toKey(OBS_TKNS_EP, endpoint), 0, -1)) {
             byte[] obs = j.get(toKey(OBS_TKN, token));
             if (obs != null) {
                 result.add(build(deserializeObs(obs)));
@@ -591,21 +599,20 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
     }
 
     @Override
-    public Collection<Observation> removeObservations(String registrationId) {
+    public Collection<Observation> removeObservations(String endpoint) {
         try (Jedis j = pool.getResource()) {
             // check registration exists
-            Registration registration = getRegistration(j, registrationId);
+            Registration registration = getRegistrationByEP(j, endpoint);
             if (registration == null)
                 return Collections.emptyList();
 
-            // get endpoint and create lock
-            String endpoint = registration.getEndpoint();
+            // create lock
             byte[] lockValue = null;
             byte[] lockKey = toKey(LOCK_EP, endpoint);
             try {
                 lockValue = lock.acquire(j, lockKey);
 
-                return unsafeRemoveAllObservations(j, registrationId);
+                return unsafeRemoveAllObservations(j, endpoint);
             } finally {
                 lock.release(j, lockKey, lockValue);
             }
@@ -655,7 +662,7 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
                 }
 
                 // secondary index to get the list by registrationId
-                j.lpush(toKey(OBS_TKNS_REGID_IDX, registrationId), obs.getRequest().getToken().getBytes());
+                j.lpush(toKey(OBS_TKNS_EP, endpoint), obs.getRequest().getToken().getBytes());
 
                 // log any collisions
                 if (previousValue != null && previousValue.length != 0) {
@@ -731,15 +738,24 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
         return deserializeReg(data);
     }
 
-    private void unsafeRemoveObservation(Jedis j, String registrationId, byte[] observationId) {
+    private Registration getRegistrationByEP(Jedis j, String endpoint) {
+        byte[] data = j.get(toEndpointKey(endpoint));
+        if (data == null) {
+            return null;
+        }
+
+        return deserializeReg(data);
+    }
+
+    private void unsafeRemoveObservation(Jedis j, String endpoint, byte[] observationId) {
         if (j.del(toKey(OBS_TKN, observationId)) > 0L) {
-            j.lrem(toKey(OBS_TKNS_REGID_IDX, registrationId), 0, observationId);
+            j.lrem(toKey(OBS_TKNS_EP, endpoint), 0, observationId);
         }
     }
 
-    private Collection<Observation> unsafeRemoveAllObservations(Jedis j, String registrationId) {
+    private Collection<Observation> unsafeRemoveAllObservations(Jedis j, String endpoint) {
         Collection<Observation> removed = new ArrayList<>();
-        byte[] regIdKey = toKey(OBS_TKNS_REGID_IDX, registrationId);
+        byte[] regIdKey = toKey(OBS_TKNS_EP, endpoint);
 
         // fetch all observations by token
         for (byte[] token : j.lrange(regIdKey, 0, -1)) {
@@ -835,7 +851,7 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
                     if (regBytes != null) {
                         Registration r = deserializeReg(regBytes);
                         if (!r.isAlive(gracePeriod)) {
-                            Deregistration dereg = removeRegistration(j, r.getId(), true);
+                            Deregistration dereg = removeRegistration(j, r.getId(), true, true);
                             if (dereg != null)
                                 expirationListener.registrationExpired(dereg.getRegistration(),
                                         dereg.getObservations());

@@ -273,7 +273,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         // get endpoint
         String endpoint = coapRequest.getUserContext().get(ObserveUtil.CTX_ENDPOINT);
 
-        //get registrationID
+        // get registrationID
         String registrationID = coapRequest.getUserContext().get(ObserveUtil.CTX_REGID);
 
         // get observation for this request
@@ -288,8 +288,8 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         Registration registration;
         if (updateRegistrationOnNotification) {
             Identity obsIdentity = EndpointContextUtil.extractIdentity(coapResponse.getSourceContext());
-            RegistrationUpdate regUpdate = new RegistrationUpdate(registrationID, obsIdentity, null, null, null,
-                    null, null, null);
+            RegistrationUpdate regUpdate = new RegistrationUpdate(registrationID, obsIdentity, null, null, null, null,
+                    null, null);
             UpdatedRegistration updatedRegistration = registrationStore.updateRegistration(regUpdate);
             if (updatedRegistration == null || updatedRegistration.getUpdatedRegistration() == null) {
                 LOG.error("Unexpected error: There is no registration with endpoint {} for this observation {}",

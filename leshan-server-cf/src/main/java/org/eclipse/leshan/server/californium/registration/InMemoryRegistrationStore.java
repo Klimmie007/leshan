@@ -267,7 +267,6 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
         } finally {
             lock.writeLock().unlock();
         }
-        LOG.error("Removed [{}] paths", removed.size());
         return removed;
     }
 

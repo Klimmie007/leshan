@@ -66,6 +66,18 @@ public class ObservationServiceTest {
     }
 
     @Test
+    public void registration_expiration_doesnt_delete_observation() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 1));
+        store.removeRegistration(support.registration.getId(), true);
+
+        Set<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(1, observations.size());
+    }
+
+    @Test
     public void observe_twice_cancels_first() {
         createDefaultObservationService();
 

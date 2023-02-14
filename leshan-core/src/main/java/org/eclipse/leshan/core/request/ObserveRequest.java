@@ -36,6 +36,16 @@ public class ObserveRequest extends AbstractSimpleDownlinkRequest<ObserveRespons
     private final Map<String, String> context;
 
     /**
+     * Creates a request for observing changes of objects in specific path
+     *
+     * @param path path of the object which will be observed
+     */
+
+    public ObserveRequest(LwM2mPath path) {
+        this(null, path, null, null);
+    }
+
+    /**
      * Creates a request for observing future changes of all instances of a particular object of a client.
      *
      * @param objectId the object ID of the resource

@@ -318,6 +318,79 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
         return new RedisIterator(pool, new ScanParams().match(REG_EP + "*").count(100));
     }
 
+    @Override
+    public List<Observation> getAllObservations() {
+        List<Observation> observations = new ArrayList<>();
+        ObservationIterator observationIterator = new ObservationIterator(pool,
+                new ScanParams().match(new String(OBS_TKN, UTF_8) + "*").count(100));
+        while (observationIterator.hasNext()) {
+            observations.add(observationIterator.next());
+        }
+        return observations;
+    }
+
+    protected class ObservationIterator implements Iterator<Observation> {
+        private Pool<Jedis> pool;
+        private ScanParams scanParams;
+
+        private String cursor;
+        private List<Observation> scanResult;
+
+        public ObservationIterator(Pool<Jedis> p, ScanParams scanParams) {
+            pool = p;
+            this.scanParams = scanParams;
+            // init scan result
+            scanNext("0");
+        }
+
+        private void scanNext(String cursor) {
+            try (Jedis j = pool.getResource()) {
+                do {
+                    ScanResult<byte[]> sr = j.scan(cursor.getBytes(), scanParams);
+
+                    this.scanResult = new ArrayList<>();
+                    if (sr.getResult() != null && !sr.getResult().isEmpty()) {
+                        for (byte[] value : j.mget(sr.getResult().toArray(new byte[][] {}))) {
+                            this.scanResult.add(build(deserializeObs(value)));
+                        }
+                    }
+
+                    cursor = sr.getCursor();
+                } while (!"0".equals(cursor) && scanResult.isEmpty());
+
+                this.cursor = cursor;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (!scanResult.isEmpty()) {
+                return true;
+            }
+            if ("0".equals(cursor)) {
+                // no more elements to scan
+                return false;
+            }
+
+            // read more elements
+            scanNext(cursor);
+            return !scanResult.isEmpty();
+        }
+
+        @Override
+        public Observation next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return scanResult.remove(0);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     protected class RedisIterator implements Iterator<Registration> {
 
         private Pool<Jedis> pool;
@@ -613,18 +686,18 @@ public class RedisRegistrationStore implements CaliforniumRegistrationStore, Sta
 
     @Override
     public org.eclipse.californium.core.observe.Observation putIfAbsent(Token token,
-            org.eclipse.californium.core.observe.Observation obs) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs) {
         return add(token, obs, true);
     }
 
     @Override
     public org.eclipse.californium.core.observe.Observation put(Token token,
-            org.eclipse.californium.core.observe.Observation obs) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs) {
         return add(token, obs, false);
     }
 
     private org.eclipse.californium.core.observe.Observation add(Token token,
-            org.eclipse.californium.core.observe.Observation obs, boolean ifAbsent) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs, boolean ifAbsent) {
         String endpoint = ObserveUtil.validateCoapObservation(obs);
         org.eclipse.californium.core.observe.Observation previousObservation = null;
 

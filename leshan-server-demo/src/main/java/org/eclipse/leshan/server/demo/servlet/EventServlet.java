@@ -84,6 +84,8 @@ public class EventServlet extends EventSourceServlet {
 
     private static final String QUERY_PARAM_ENDPOINT = "ep";
 
+    // private static final String EVENT_SAVE_OBSERVATIONS = "SAVE";
+
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOG = LoggerFactory.getLogger(EventServlet.class);

@@ -109,4 +109,6 @@ public abstract class Observation {
     }
 
     public abstract List<LwM2mPath> getPaths();
+
+    public abstract boolean removeIfIncluded(LwM2mPath path);
 }

@@ -76,6 +76,11 @@ public class CompositeObservation extends Observation {
     }
 
     @Override
+    public boolean removeIfIncluded(LwM2mPath path) {
+        return paths.removeIf(lwM2mPath -> lwM2mPath.startWith(path));
+    }
+
+    @Override
     public String toString() {
         return String.format(
                 "CompositeObservation [paths=%s, id=%s, requestContentFormat=%s, responseContentFormat=%s, endpoint=%s, context=%s]",

@@ -42,10 +42,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.Token;
-import org.eclipse.californium.core.observe.ObservationStoreException;
 import org.eclipse.californium.core.observe.ObservationUtil;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.leshan.core.Destroyable;
@@ -103,6 +103,13 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
         this.schedExecutor = schedExecutor;
         this.cleanPeriod = cleanPeriodInSec;
     }
+
+    /* *************** Saving observations to file ************ */
+
+//    public void saveToFile(String filePath)
+//    {
+//
+//    }
 
     /* *************** Leshan Registration API **************** */
 
@@ -259,7 +266,7 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
             lock.writeLock().lock();
             // cancel existing observations for the same path and endpoint
             for (Observation obs : unsafeGetObservations(endpoint)) {
-                if (areTheSamePaths(observation, obs) && !Arrays.equals(observation.getId(), obs.getId())) {
+                if (!Arrays.equals(observation.getId(), obs.getId()) && areTheSamePaths(observation, obs)) {
                     unsafeRemoveObservation(new Token(obs.getId()));
                     removed.add(obs);
                 }
@@ -335,24 +342,22 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
 
     @Override
     public org.eclipse.californium.core.observe.Observation putIfAbsent(Token token,
-            org.eclipse.californium.core.observe.Observation obs) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs) {
         return add(token, obs, true);
     }
 
     @Override
     public org.eclipse.californium.core.observe.Observation put(Token token,
-            org.eclipse.californium.core.observe.Observation obs) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs) {
         return add(token, obs, false);
     }
 
     private org.eclipse.californium.core.observe.Observation add(Token token,
-            org.eclipse.californium.core.observe.Observation obs, boolean ifAbsent) throws ObservationStoreException {
+            org.eclipse.californium.core.observe.Observation obs, boolean ifAbsent) {
         org.eclipse.californium.core.observe.Observation previousObservation = null;
         if (obs != null) {
             try {
                 lock.writeLock().lock();
-
-                validateObservation(obs);
 
                 String endpoint = ObserveUtil.extractEndpoint(obs);
                 if (ifAbsent) {
@@ -476,14 +481,18 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
         }
     }
 
-    private String validateObservation(org.eclipse.californium.core.observe.Observation observation)
-            throws ObservationStoreException {
-        String endpoint = ObserveUtil.validateCoapObservation(observation);
-        if (getRegistration(ObserveUtil.extractRegistrationId(observation)) == null) {
-            throw new ObservationStoreException("no registration for this Id");
-        }
+    /* *************** Observation fetch ****************** */
 
-        return endpoint;
+    @Override
+    public List<Observation> getAllObservations() {
+        List<Observation> observations = new ArrayList<>();
+        obsByToken.values().forEach(new Consumer<org.eclipse.californium.core.observe.Observation>() {
+            @Override
+            public void accept(org.eclipse.californium.core.observe.Observation observation) {
+                observations.add(build(observation));
+            }
+        });
+        return observations;
     }
 
     /* *************** Expiration handling **************** */

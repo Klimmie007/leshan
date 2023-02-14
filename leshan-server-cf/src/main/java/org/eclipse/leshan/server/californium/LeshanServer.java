@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -339,14 +338,9 @@ public class LeshanServer {
             @Override
             public void registered(Registration registration, Registration previousReg,
                     Collection<Observation> previousObservations) {
-                if (!previousObservations.isEmpty()) {
+                if (previousObservations != null && !previousObservations.isEmpty()) {
                     List<LwM2mPath> paths = new ArrayList<>();
-                    previousObservations.forEach(new Consumer<Observation>() {
-                        @Override
-                        public void accept(Observation observation) {
-                            paths.addAll(observation.getPaths());
-                        }
-                    });
+                    previousObservations.forEach(observation -> paths.addAll(observation.getPaths()));
                     if (paths.size() == 1) {
                         ObserveRequest req = new ObserveRequest(paths.get(0).toString());
                         try {
@@ -883,5 +877,9 @@ public class LeshanServer {
 
             sender.sendCoapRequest(destination, request, timeout, responseCallback, errorCallback);
         }
+    }
+
+    public CaliforniumRegistrationStore getRegStore() {
+        return registrationStore;
     }
 }

@@ -124,12 +124,10 @@ public class CaliforniumLwM2mRequestSender implements LwM2mRequestSender, CoapRe
                 observation = ((ObserveCompositeResponse) response).getObservation();
             }
             if (observation != null) {
-                LOG.info("here?");
                 observationService.addObservation(destination, observation);
             }
         }
         return response;
-        // THIS FUCKER
     }
 
     /**

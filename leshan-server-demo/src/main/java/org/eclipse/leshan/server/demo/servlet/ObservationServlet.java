@@ -1,0 +1,137 @@
+/****************************************
+ * Copyright (c) 2013-2015 Sierra Wireless and others.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
+ *
+ * The Eclipse Public License is available at
+ *    http://www.eclipse.org/legal/epl-v20.html
+ * and the Eclipse Distribution License is available at
+ *    http://www.eclipse.org/org/documents/edl-v10.html.
+ *
+ * Contributors:
+ *      Kamil Milewski @ PLUM sp. z o.o - API
+ */
+package org.eclipse.leshan.server.demo.servlet;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
+import org.eclipse.leshan.core.model.ObservationModel;
+import org.eclipse.leshan.core.observation.CompositeObservation;
+import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.core.observation.SingleObservation;
+import org.eclipse.leshan.core.request.ContentFormat;
+import org.eclipse.leshan.core.request.ObserveCompositeRequest;
+import org.eclipse.leshan.core.request.ObserveRequest;
+import org.eclipse.leshan.core.request.exception.InvalidRequestException;
+import org.eclipse.leshan.core.util.json.JsonException;
+import org.eclipse.leshan.server.californium.LeshanServer;
+import org.eclipse.leshan.server.californium.registration.CaliforniumRegistrationStore;
+import org.eclipse.leshan.server.demo.model.ObservationModelSerDes;
+import org.eclipse.leshan.server.registration.Registration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class ObservationServlet extends HttpServlet {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ObservationServlet.class);
+    private ObservationModelSerDes serDes = new ObservationModelSerDes();
+    private CaliforniumRegistrationStore store;
+    private LeshanServer server;
+
+    public ObservationServlet(LeshanServer server) {
+        this.server = server;
+        this.store = server.getRegStore();
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String content = IOUtils.toString(req.getInputStream(), req.getCharacterEncoding());
+        JsonNode node = new ObjectMapper().readTree(content);
+        if (!node.isArray()) {
+            resp.getOutputStream().print("File sent does not contain an array of observations");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        List<ObservationModel> models;
+        try {
+            models = serDes.deserialize(node.elements());
+        } catch (JsonException e) {
+            resp.getOutputStream().print("There was an issue with JSON parsing");
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        } catch (Error e) {
+            LOG.error("kurwa", e);
+            return;
+        }
+        for (ObservationModel observationModel : models) {
+            Registration registration = store.getRegistrationByEndpoint(observationModel.ep);
+            if (observationModel.paths.size() > 1) {
+                if (registration == null)
+                    store.addObservation(observationModel.ep,
+                            new CompositeObservation(UUID.randomUUID().toString().getBytes(), observationModel.ep,
+                                    observationModel.paths, ContentFormat.SENML_CBOR, ContentFormat.SENML_CBOR, null));
+                else
+                    try {
+                        server.send(registration, new ObserveCompositeRequest(ContentFormat.SENML_JSON,
+                                ContentFormat.SENML_CBOR, observationModel.paths));
+                    } catch (InterruptedException e) {
+                        LOG.error("Couldn't send composite request - interrupted", e);
+                        resp.getOutputStream().print("There was an issue with JSON parsing");
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        return;
+                    } catch (InvalidRequestException e) {
+                        LOG.error("Couldn't send composite request - paths are overlapping", e);
+                        resp.getOutputStream().print("File sent includes overlapping paths");
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        return;
+                    } catch (Error e) {
+                        LOG.error("kurwa", e);
+                        return;
+                    }
+            } else {
+                if (registration == null)
+                    store.addObservation(observationModel.ep,
+                            new SingleObservation(UUID.randomUUID().toString().getBytes(), observationModel.ep,
+                                    observationModel.paths.get(0), ContentFormat.TLV, null));
+                else
+                    try {
+                        server.send(registration, new ObserveRequest(observationModel.paths.get(0)));
+                    } catch (InterruptedException e) {
+                        LOG.error("Couldn't send simple request - interrupted", e);
+                    }
+
+            }
+        }
+        resp.getOutputStream().print("Observations added");
+        resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        List<Observation> observations = store.getAllObservations();
+        List<ObservationModel> models = new ArrayList<ObservationModel>();
+        observations.forEach(new Consumer<Observation>() {
+            @Override
+            public void accept(Observation observation) {
+                models.add(new ObservationModel(observation));
+            }
+        });
+        resp.getOutputStream().write(serDes.bSerialize(models));
+        resp.setStatus(HttpServletResponse.SC_OK);
+    }
+}

@@ -26,6 +26,9 @@
 
 <script>
 import LeshanNavBar from "@/components/LeshanNavBar.vue";
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'jquery/src/jquery.js'
+import 'bootstrap/dist/js/bootstrap.min.js'
 
 export default {
   components: {

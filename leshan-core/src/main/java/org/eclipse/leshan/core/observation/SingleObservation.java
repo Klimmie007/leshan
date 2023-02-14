@@ -62,6 +62,11 @@ public class SingleObservation extends Observation {
         return pathWrapped;
     }
 
+    @Override
+    public boolean removeIfIncluded(LwM2mPath path) {
+        return this.path.startWith(path);
+    }
+
     public LwM2mPath getPath() {
         return path;
     }

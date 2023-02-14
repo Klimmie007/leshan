@@ -48,6 +48,7 @@ import org.eclipse.leshan.server.demo.cli.LeshanServerDemoCLI;
 import org.eclipse.leshan.server.demo.servlet.ClientServlet;
 import org.eclipse.leshan.server.demo.servlet.EventServlet;
 import org.eclipse.leshan.server.demo.servlet.ObjectSpecServlet;
+import org.eclipse.leshan.server.demo.servlet.ObservationServlet;
 import org.eclipse.leshan.server.demo.servlet.ServerServlet;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
 import org.eclipse.leshan.server.model.VersionedModelProvider;
@@ -247,6 +248,9 @@ public class LeshanServerDemo {
 
         ServletHolder clientServletHolder = new ServletHolder(new ClientServlet(lwServer));
         root.addServlet(clientServletHolder, "/api/clients/*");
+
+        ServletHolder observationServletHolder = new ServletHolder(new ObservationServlet(lwServer));
+        root.addServlet(observationServletHolder, "/api/observations");
 
         ServletHolder securityServletHolder;
         if (cli.identity.isRPK()) {

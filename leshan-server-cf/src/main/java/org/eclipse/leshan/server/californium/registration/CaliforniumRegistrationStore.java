@@ -15,7 +15,10 @@
  *******************************************************************************/
 package org.eclipse.leshan.server.californium.registration;
 
+import java.util.List;
+
 import org.eclipse.californium.core.observe.ObservationStore;
+import org.eclipse.leshan.core.observation.Observation;
 import org.eclipse.leshan.server.registration.RegistrationStore;
 
 /**
@@ -23,4 +26,5 @@ import org.eclipse.leshan.server.registration.RegistrationStore;
  */
 public interface CaliforniumRegistrationStore extends RegistrationStore, ObservationStore {
 
+    public List<Observation> getAllObservations();
 }

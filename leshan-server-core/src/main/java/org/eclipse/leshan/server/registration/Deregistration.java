@@ -37,6 +37,10 @@ public class Deregistration {
             this.observations = observations;
     }
 
+    public Deregistration(Collection<Observation> observations) {
+        this(null, observations);
+    }
+
     public Registration getRegistration() {
         return registration;
     }

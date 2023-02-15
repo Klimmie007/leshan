@@ -39,6 +39,14 @@ public interface ObservationListener {
     void newObservation(Observation observation, Registration registration);
 
     /**
+     * Called when a new observation is created.
+     *
+     * @param observation the new observation.
+     * @param endpoint the related endpoint
+     */
+    void newObservationWithoutRegistration(Observation observation, String endpoint);
+
+    /**
      * Called when an observation is cancelled.
      *
      * @param observation the cancelled observation.

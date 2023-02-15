@@ -21,6 +21,9 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -41,6 +44,7 @@ import org.eclipse.leshan.core.node.codec.CodecException;
 import org.eclipse.leshan.core.node.codec.LwM2mDecoder;
 import org.eclipse.leshan.core.node.codec.LwM2mEncoder;
 import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.DownlinkRequest;
 import org.eclipse.leshan.core.request.ObserveCompositeRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
@@ -131,7 +135,7 @@ public class LeshanServer {
 
     protected final LwM2mLinkParser linkParser;
 
-    // private Map<String, List<LwM2mPath>> observationMemory = new HashMap<>();
+    private Timer timer = new Timer();
 
     /**
      * Initialize a server which will bind to the specified address and port.
@@ -338,23 +342,32 @@ public class LeshanServer {
             @Override
             public void registered(Registration registration, Registration previousReg,
                     Collection<Observation> previousObservations) {
+                LOG.error("registration [{}], number of previous registrations [{}]", registration,
+                        previousObservations.size());
                 if (previousObservations != null && !previousObservations.isEmpty()) {
                     List<LwM2mPath> paths = new ArrayList<>();
                     previousObservations.forEach(observation -> paths.addAll(observation.getPaths()));
                     if (paths.size() == 1) {
-                        ObserveRequest req = new ObserveRequest(paths.get(0).toString());
-                        try {
-                            send(registration, req);
-                        } catch (InterruptedException e) {
-                            LOG.error(e.getMessage());
-                        }
+                        ObserveRequest req = new ObserveRequest(ContentFormat.SENML_CBOR, paths.get(0).toString());
+
+                        timer.schedule(new SendTask(() -> {
+                            try {
+                                send(registration, req);
+                            } catch (InterruptedException e) {
+                                LOG.error(e.getMessage());
+                            }
+                        }), TimeUnit.SECONDS.toMillis(3));
+
                     } else if (paths.size() > 1) {
-                        ObserveCompositeRequest req = new ObserveCompositeRequest(null, null, paths);
-                        try {
-                            send(registration, req);
-                        } catch (InterruptedException e) {
-                            LOG.error(e.getMessage());
-                        }
+                        ObserveCompositeRequest req = new ObserveCompositeRequest(ContentFormat.SENML_CBOR,
+                                ContentFormat.SENML_CBOR, paths);
+                        timer.schedule(new SendTask(() -> {
+                            try {
+                                send(registration, req);
+                            } catch (InterruptedException e) {
+                                LOG.error(e.getMessage());
+                            }
+                        }), TimeUnit.SECONDS.toMillis(3));
                     }
                 }
             }
@@ -457,6 +470,9 @@ public class LeshanServer {
         }
 
         presenceService.destroy();
+
+        timer.cancel();
+        timer = null;
 
         LOG.info("LWM2M server destroyed.");
     }
@@ -881,5 +897,21 @@ public class LeshanServer {
 
     public CaliforniumRegistrationStore getRegStore() {
         return registrationStore;
+    }
+
+    private interface lambda {
+        public void run();
+    }
+
+    private class SendTask extends TimerTask {
+        private lambda lambda;
+
+        public SendTask(lambda lambda) {
+            this.lambda = lambda;
+        }
+
+        public void run() {
+            lambda.run();
+        }
     }
 }

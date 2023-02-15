@@ -234,6 +234,11 @@ public class EventServlet extends EventSourceServlet {
         @Override
         public void newObservation(Observation observation, Registration registration) {
         }
+
+        @Override
+        public void newObservationWithoutRegistration(Observation observation, String endpoint) {
+
+        }
     };
 
     private final SendListener sendListener = new SendListener() {

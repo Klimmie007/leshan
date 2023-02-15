@@ -45,6 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.observe.ObservationUtil;
 import org.eclipse.californium.elements.EndpointContext;
@@ -52,6 +53,7 @@ import org.eclipse.leshan.core.Destroyable;
 import org.eclipse.leshan.core.Startable;
 import org.eclipse.leshan.core.Stoppable;
 import org.eclipse.leshan.core.californium.ObserveUtil;
+import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
 import org.eclipse.leshan.core.observation.SingleObservation;
@@ -137,6 +139,8 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
                     removeFromMap(regsByIdentity, registrationRemoved.getIdentity(), registrationRemoved);
                 }
                 return new Deregistration(registrationRemoved, observationsRemoved);
+            } else if (tokensByEp.containsKey(registration.getEndpoint())) {
+                return new Deregistration(getObservations(registration.getEndpoint()));
             }
         } finally {
             lock.writeLock().unlock();
@@ -261,14 +265,43 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     public Collection<Observation> addObservation(String endpoint, Observation observation) {
 
         List<Observation> removed = new ArrayList<>();
+        boolean removedSomething = false;
 
         try {
             lock.writeLock().lock();
             // cancel existing observations for the same path and endpoint
             for (Observation obs : unsafeGetObservations(endpoint)) {
-                if (!Arrays.equals(observation.getId(), obs.getId()) && areTheSamePaths(observation, obs)) {
-                    unsafeRemoveObservation(new Token(obs.getId()));
-                    removed.add(obs);
+
+                if (!Arrays.equals(observation.getId(), obs.getId())) {
+                    if (areTheSamePaths(observation, obs)) {
+                        unsafeRemoveObservation(new Token(obs.getId()));
+                        removed.add(obs);
+                        break;
+                    }
+                    for (LwM2mPath path : observation.getPaths()) {
+                        if (obs.removeIfIncluded(path)) {
+                            if (obs.getPaths().isEmpty() || obs instanceof SingleObservation) {
+                                unsafeRemoveObservation(new Token(obs.getId()));
+                                removed.add(obs);
+                            } else {
+                                changePaths(new Token(obs.getId()), obs.getPaths());
+                            }
+                            removedSomething = true;
+                        }
+                    }
+                    if (!removedSomething) {
+                        for (LwM2mPath path : obs.getPaths()) {
+                            if (observation.removeIfIncluded(path)) {
+                                if (observation.getPaths().isEmpty() || observation instanceof SingleObservation) {
+                                    unsafeRemoveObservation(new Token(observation.getId()));
+                                    removed.add(observation);
+                                    break;
+                                } else {
+                                    changePaths(new Token(observation.getId()), observation.getPaths());
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } finally {
@@ -420,6 +453,25 @@ public class InMemoryRegistrationStore implements CaliforniumRegistrationStore, 
     }
 
     /* *************** Observation utility functions **************** */
+
+    private void changePaths(Token token, List<LwM2mPath> paths) {
+        org.eclipse.californium.core.observe.Observation obsToChange = unsafeGetObservation(token);
+        if (obsToChange == null) {
+            LOG.error("No observation with token [{}] exists", token);
+            return;
+        }
+        obsByToken.remove(token);
+        Request request = obsToChange.getRequest();
+        Map<String, String> ctx = new HashMap<>(request.getUserContext());
+        ctx.remove(ObserveUtil.CTX_LWM2M_PATH);
+        ObserveUtil.addPathsIntoContext(ctx, paths);
+        request.setUserContext(ctx);
+        obsByToken.put(token, new org.eclipse.californium.core.observe.Observation(request, obsToChange.getContext()));
+    }
+
+    public int getObsSize() {
+        return obsByToken.values().size();
+    }
 
     private org.eclipse.californium.core.observe.Observation unsafeGetObservation(Token token) {
         org.eclipse.californium.core.observe.Observation obs = obsByToken.get(token);

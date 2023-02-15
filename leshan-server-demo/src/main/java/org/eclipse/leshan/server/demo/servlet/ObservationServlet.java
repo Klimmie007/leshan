@@ -18,7 +18,8 @@ package org.eclipse.leshan.server.demo.servlet;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 import javax.servlet.ServletException;
@@ -27,16 +28,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
+import org.eclipse.californium.core.coap.Request;
+import org.eclipse.leshan.core.californium.ObserveUtil;
 import org.eclipse.leshan.core.model.ObservationModel;
-import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.core.observation.SingleObservation;
 import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.ObserveCompositeRequest;
 import org.eclipse.leshan.core.request.ObserveRequest;
 import org.eclipse.leshan.core.request.exception.InvalidRequestException;
 import org.eclipse.leshan.core.util.json.JsonException;
 import org.eclipse.leshan.server.californium.LeshanServer;
+import org.eclipse.leshan.server.californium.observation.ObservationServiceImpl;
 import org.eclipse.leshan.server.californium.registration.CaliforniumRegistrationStore;
 import org.eclipse.leshan.server.demo.model.ObservationModelSerDes;
 import org.eclipse.leshan.server.registration.Registration;
@@ -51,11 +53,13 @@ public class ObservationServlet extends HttpServlet {
     private static final Logger LOG = LoggerFactory.getLogger(ObservationServlet.class);
     private ObservationModelSerDes serDes = new ObservationModelSerDes();
     private CaliforniumRegistrationStore store;
+    private ObservationServiceImpl service;
     private LeshanServer server;
 
     public ObservationServlet(LeshanServer server) {
         this.server = server;
         this.store = server.getRegStore();
+        this.service = (ObservationServiceImpl) server.getObservationService();
     }
 
     @Override
@@ -78,16 +82,27 @@ public class ObservationServlet extends HttpServlet {
             LOG.error("kurwa", e);
             return;
         }
+        Random random = ThreadLocalRandom.current();
+        byte[] token;
+        token = new byte[random.nextInt(8) + 1];
+        // random value
+        random.nextBytes(token);
         for (ObservationModel observationModel : models) {
             Registration registration = store.getRegistrationByEndpoint(observationModel.ep);
             if (observationModel.paths.size() > 1) {
-                if (registration == null)
-                    store.addObservation(observationModel.ep,
-                            new CompositeObservation(UUID.randomUUID().toString().getBytes(), observationModel.ep,
-                                    observationModel.paths, ContentFormat.SENML_CBOR, ContentFormat.SENML_CBOR, null));
-                else
+                if (registration == null) {
+                    Request coapRequest = Request.newFetch();
+                    coapRequest.setToken(token);
+                    coapRequest.setObserve();
+                    coapRequest.setUserContext(ObserveUtil.createCoapObserveCompositeRequestContext(observationModel.ep,
+                            null, new ObserveCompositeRequest(null, null, observationModel.paths)));
+                    store.put(coapRequest.getToken(),
+                            new org.eclipse.californium.core.observe.Observation(coapRequest, null));
+                    service.addObservationWithoutRegistration(observationModel.ep,
+                            ObserveUtil.createLwM2mCompositeObservation(coapRequest));
+                } else
                     try {
-                        server.send(registration, new ObserveCompositeRequest(ContentFormat.SENML_JSON,
+                        server.send(registration, new ObserveCompositeRequest(ContentFormat.SENML_CBOR,
                                 ContentFormat.SENML_CBOR, observationModel.paths));
                     } catch (InterruptedException e) {
                         LOG.error("Couldn't send composite request - interrupted", e);
@@ -104,11 +119,17 @@ public class ObservationServlet extends HttpServlet {
                         return;
                     }
             } else {
-                if (registration == null)
-                    store.addObservation(observationModel.ep,
-                            new SingleObservation(UUID.randomUUID().toString().getBytes(), observationModel.ep,
-                                    observationModel.paths.get(0), ContentFormat.TLV, null));
-                else
+                if (registration == null) {
+                    Request coapRequest = Request.newGet();
+                    coapRequest.setToken(token);
+                    coapRequest.setObserve();
+                    coapRequest.setUserContext(ObserveUtil.createCoapObserveRequestContext(observationModel.ep, null,
+                            new ObserveRequest(observationModel.paths.get(0))));
+                    store.put(coapRequest.getToken(),
+                            new org.eclipse.californium.core.observe.Observation(coapRequest, null));
+                    service.addObservationWithoutRegistration(observationModel.ep,
+                            ObserveUtil.createLwM2mObservation(coapRequest));
+                } else
                     try {
                         server.send(registration, new ObserveRequest(observationModel.paths.get(0)));
                     } catch (InterruptedException e) {

@@ -23,12 +23,15 @@ import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.util.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An composite-observation of a resource provided by a LWM2M Client.
  */
 public class CompositeObservation extends Observation {
 
+    private final static Logger LOG = LoggerFactory.getLogger(CompositeObservation.class);
     private final List<LwM2mPath> paths;
     private final ContentFormat requestContentFormat;
     private final ContentFormat responseContentFormat;

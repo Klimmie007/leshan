@@ -112,6 +112,17 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         this.updateRegistrationOnNotification = updateRegistrationOnNotification;
     }
 
+    public void addObservationWithoutRegistration(String endpoint, Observation observation) {
+        for (Observation existing : registrationStore.addObservation(endpoint, observation)) {
+            cancel(existing);
+        }
+
+        for (ObservationListener listener : listeners) {
+            LOG.info(observation.toString());
+            listener.newObservationWithoutRegistration(observation, endpoint);
+        }
+    }
+
     public void addObservation(Registration registration, Observation observation) {
         for (Observation existing : registrationStore.addObservation(registration.getEndpoint(), observation)) {
             cancel(existing);

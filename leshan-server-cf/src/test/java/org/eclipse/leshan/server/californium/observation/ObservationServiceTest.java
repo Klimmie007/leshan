@@ -21,6 +21,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,8 +64,105 @@ public class ObservationServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        support.givenASimpleClient();
         store = new InMemoryRegistrationStore();
+        support.givenASimpleClient();
+    }
+
+    @Test
+    public void adding_narrower_observation_fails() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        Observation observation = givenAnObservation(support.registration.getId(), support.registration.getEndpoint(),
+                new LwM2mPath(3, 0));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 6));
+
+        Set<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(1, observations.size());
+        Assert.assertTrue(observations.contains(observation));
+    }
+
+    @Test
+    public void adding_broader_observation_cancels_narrower() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 4));
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), new LwM2mPath(3, 0, 17));
+        Observation observation = givenAnObservation(support.registration.getId(), support.registration.getEndpoint(),
+                new LwM2mPath(3, 0));
+
+        Set<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(1, observations.size());
+        Assert.assertTrue(observations.contains(observation));
+    }
+
+    @Test
+    public void composite_observation_remove_path_by_path() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        List<LwM2mPath> paths = new ArrayList<>();
+        LwM2mPath duplicate = new LwM2mPath(3, 0, 4);
+        paths.add(duplicate);
+        LwM2mPath path = new LwM2mPath(1, 2, 3);
+        paths.add(path);
+        Observation observation = givenACompositeObservation(support.registration.getId(),
+                support.registration.getEndpoint(), paths);
+        Observation obs = givenAnObservation(support.registration.getId(), support.registration.getEndpoint(),
+                new LwM2mPath(3, 0, 4));
+
+        Collection<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(2, observations.size());
+        Assert.assertTrue(observations.contains(obs));
+        Observation changed = store.getObservation(support.registration.getEndpoint(), observation.getId());
+        Assert.assertNotNull(changed);
+        Assert.assertEquals(1, changed.getPaths().size());
+        Assert.assertTrue(changed.getPaths().contains(path));
+        Assert.assertFalse(changed.getPaths().contains(duplicate));
+    }
+
+    @Test
+    public void remove_observation_by_adding_composite_with_path() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        List<LwM2mPath> paths = new ArrayList<>();
+        LwM2mPath duplicate = new LwM2mPath(6, 9);
+        givenAnObservation(support.registration.getId(), support.registration.getEndpoint(), duplicate);
+        paths.add(duplicate);
+        paths.add(new LwM2mPath(21, 3, 7));
+        Observation observation = givenACompositeObservation(support.registration.getId(),
+                support.registration.getEndpoint(), paths);
+
+        Collection<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(1, observations.size());
+        Assert.assertTrue(observations.contains(observation));
+    }
+
+    @Test
+    public void remove_paths_from_composite_by_adding_broader() {
+        createDefaultObservationService();
+
+        store.addRegistration(support.registration);
+        List<LwM2mPath> paths = new ArrayList<>();
+        LwM2mPath pathToPreserve = new LwM2mPath(177, 0, 13);
+        paths.add(pathToPreserve);
+        paths.add(new LwM2mPath(21, 3, 7));
+        paths.add(new LwM2mPath(21, 3, 8));
+        Observation compositeObservation = givenACompositeObservation(support.registration.getId(),
+                support.registration.getEndpoint(), paths);
+        Observation singleObservation = givenAnObservation(support.registration.getId(),
+                support.registration.getEndpoint(), new LwM2mPath(21, 3));
+
+        Collection<Observation> observations = observationService.getObservations(support.registration);
+        Assert.assertEquals(2, observations.size());
+        Assert.assertTrue(observations.contains(singleObservation));
+        Observation changed = store.getObservation(support.registration.getEndpoint(), compositeObservation.getId());
+        Assert.assertNotNull(changed);
+        Assert.assertEquals(1, changed.getPaths().size());
+        Assert.assertTrue(changed.getPaths().contains(pathToPreserve));
+
     }
 
     @Test
@@ -189,7 +289,7 @@ public class ObservationServiceTest {
         // given
         createDummyDecoderObservationService();
 
-        givenAnCompositeObservation(support.registration.getId(), support.registration.getEndpoint(),
+        givenACompositeObservation(support.registration.getId(), support.registration.getEndpoint(),
                 new LwM2mPath("/1/2/3"));
 
         Response coapResponse = new Response(CoAP.ResponseCode.CONTENT);
@@ -244,7 +344,7 @@ public class ObservationServiceTest {
         return observation;
     }
 
-    private Observation givenAnCompositeObservation(String registrationId, String endpoint, LwM2mPath target) {
+    private Observation givenACompositeObservation(String registrationId, String endpoint, List<LwM2mPath> targets) {
         Registration registration = store.getRegistration(registrationId);
         if (registration == null) {
             registration = givenASimpleClient(registrationId, endpoint);
@@ -257,14 +357,21 @@ public class ObservationServiceTest {
         coapRequest
                 .setDestinationContext(EndpointContextUtil.extractContext(support.registration.getIdentity(), false));
         Map<String, String> context = ObserveUtil.createCoapObserveCompositeRequestContext(registration.getEndpoint(),
-                registrationId, new ObserveCompositeRequest(null, null, target.toString()));
+                registrationId, new ObserveCompositeRequest(null, null, targets));
         coapRequest.setUserContext(context);
 
         store.put(coapRequest.getToken(), new org.eclipse.californium.core.observe.Observation(coapRequest, null));
 
         CompositeObservation observation = ObserveUtil.createLwM2mCompositeObservation(coapRequest);
+        observationService.addObservation(registration, observation);
 
         return observation;
+    }
+
+    private Observation givenACompositeObservation(String registrationId, String endpoint, LwM2mPath target) {
+        List<LwM2mPath> paths = new ArrayList<>();
+        paths.add(target);
+        return givenACompositeObservation(registrationId, endpoint, paths);
     }
 
     private Registration givenASimpleClient(String registrationId, String endpoint) {
@@ -285,6 +392,11 @@ public class ObservationServiceTest {
 
         @Override
         public void newObservation(Observation observation, Registration registration) {
+
+        }
+
+        @Override
+        public void newObservationWithoutRegistration(Observation observation, String endpoint) {
 
         }
 

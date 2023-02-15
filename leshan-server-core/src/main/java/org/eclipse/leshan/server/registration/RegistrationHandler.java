@@ -90,8 +90,10 @@ public class RegistrationHandler {
             @Override
             public void run() {
                 if (deregistration != null) {
-                    registrationService.fireUnregistered(deregistration.getRegistration(),
-                            deregistration.getObservations(), approvedRegistration);
+                    if (deregistration.getRegistration() != null) {
+                        registrationService.fireUnregistered(deregistration.getRegistration(),
+                                deregistration.getObservations(), approvedRegistration);
+                    }
                     registrationService.fireRegistered(approvedRegistration, deregistration.registration,
                             deregistration.observations);
                 } else {

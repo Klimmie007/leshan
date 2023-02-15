@@ -93,6 +93,11 @@ public class PresenceStateListener implements RegistrationListener, ObservationL
     public void newObservation(Observation observation, Registration registration) {
     }
 
+    @Override
+    public void newObservationWithoutRegistration(Observation observation, String endpoint) {
+
+    }
+
     /**
      * {@inheritDoc}
      *

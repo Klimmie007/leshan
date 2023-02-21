@@ -14,6 +14,7 @@
  *     Sierra Wireless - initial API and implementation
  *     Bosch Software Innovations - added Redis URL support with authentication
  *     Firis SA - added mDNS services registering
+ *     Kamil Milewski @ PLUM sp. z o.o. - re-launch saved observations after device reconnects
  *******************************************************************************/
 package org.eclipse.leshan.server.demo;
 

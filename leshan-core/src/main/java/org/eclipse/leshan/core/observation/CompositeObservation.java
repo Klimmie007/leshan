@@ -13,6 +13,7 @@
  * Contributors:
  *     Michał Wadowski (Orange) - Add Observe-Composite feature.
  *     Michał Wadowski (Orange) - Add Cancel Composite-Observation feature.
+ *     Kamil Milewski @ PLUM sp. z o.o - Remove overlapping paths
  *******************************************************************************/
 package org.eclipse.leshan.core.observation;
 

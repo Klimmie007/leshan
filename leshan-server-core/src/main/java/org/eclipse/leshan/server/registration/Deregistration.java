@@ -12,6 +12,7 @@
  *
  * Contributors:
  *     Sierra Wireless - initial API and implementation
+ *     Kamil Milewski @ PLUM sp. z o.o - changes that allow re-launching observations on reconnect
  *******************************************************************************/
 package org.eclipse.leshan.server.registration;
 

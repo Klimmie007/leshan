@@ -14,6 +14,7 @@
  *     Sierra Wireless - initial API and implementation
  *     RISE SICS AB - added Queue Mode operation
  *     Michał Wadowski (Orange) - Improved compliance with rfc6690
+ *     Kamil Milewski @ PLUM sp. z o.o - added re-launching of observations on client's reconnection
  *******************************************************************************/
 package org.eclipse.leshan.server.californium;
 
@@ -342,8 +343,6 @@ public class LeshanServer {
             @Override
             public void registered(Registration registration, Registration previousReg,
                     Collection<Observation> previousObservations) {
-                LOG.error("registration [{}], number of previous registrations [{}]", registration,
-                        previousObservations.size());
                 if (previousObservations != null && !previousObservations.isEmpty()) {
                     List<LwM2mPath> paths = new ArrayList<>();
                     previousObservations.forEach(observation -> paths.addAll(observation.getPaths()));

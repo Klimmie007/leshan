@@ -17,6 +17,7 @@
  *     Achim Kraus (Bosch Software Innovations GmbH) - update to modified
  *                                                     ObservationStore API
  *     Michał Wadowski (Orange)                      - Add Observe-Composite feature.
+ *     Kamil Milewski @ PLUM sp. z o.o.              - Switch observation key to endpoint
  *******************************************************************************/
 package org.eclipse.leshan.server.redis;
 

@@ -14,6 +14,7 @@
  *     Sierra Wireless - initial API and implementation
  *     Michał Wadowski (Orange) - Add Observe-Composite feature.
  *     Orange - keep one JSON dependency
+ *     Kamil Milewski @ PLUM sp. z o.o. - Reading observations from file
  *******************************************************************************/
 package org.eclipse.leshan.server.demo.servlet;
 

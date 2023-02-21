@@ -115,7 +115,7 @@ public class RootResource extends LwM2mClientCoapResource {
         // Handle content format for the response
         ContentFormat responseContentFormat = ContentFormat.SENML_CBOR; // use CBOR as default
         if (exchange.getRequestOptions().hasAccept()) {
-            // If an request ask for a specific content format, use it (if we support it)
+            // If a request ask for a specific content format, use it (if we support it)
             responseContentFormat = ContentFormat.fromCode(exchange.getRequestOptions().getAccept());
             if (!encoder.isSupported(responseContentFormat)) {
                 exchange.respond(ResponseCode.NOT_ACCEPTABLE);

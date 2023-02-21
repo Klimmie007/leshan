@@ -22,6 +22,7 @@
  *     Achim Kraus (Bosch Software Innovations GmbH) - update to modified
  *                                                     ObservationStore API
  *     Michał Wadowski (Orange)                      - Add Observe-Composite feature.
+ *     Kamil Milewski @ PLUM sp. z o.o               - Update to API for observation utilities
  *******************************************************************************/
 package org.eclipse.leshan.server.californium.registration;
 

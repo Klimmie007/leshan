@@ -12,6 +12,7 @@
  *
  * Contributors:
  *     Sierra Wireless - initial API and implementation
+ *     Kamil Milewski @ PLUM sp. z o.o - observation access to save them to file
  *******************************************************************************/
 package org.eclipse.leshan.server.californium.registration;
 

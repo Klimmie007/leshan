@@ -14,6 +14,7 @@
  *     Sierra Wireless - initial API and implementation
  *     Achim Kraus (Bosch Software Innovations GmbH) - use Identity as destination
  *     Rokwoon Kim (contracted with NTELS) - use registrationIdProvider
+ *     Kamil Milewski @ PLUM sp. z o.o - changes that allow saving observations on registration expiration
  *******************************************************************************/
 package org.eclipse.leshan.server.registration;
 

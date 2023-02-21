@@ -13,6 +13,7 @@
  * Contributors:
  *     Sierra Wireless - initial API and implementation
  *     Michał Wadowski (Orange) - Add Observe-Composite feature.
+ *     Kamil Milewski @ PLUM sp. z o.o - Remove overlapping paths
  *******************************************************************************/
 package org.eclipse.leshan.server.californium.observation;
 

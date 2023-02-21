@@ -55,8 +55,6 @@ import org.slf4j.LoggerFactory;
  */
 public class CaliforniumLwM2mRequestSender implements LwM2mRequestSender, CoapRequestSender, Destroyable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CaliforniumLwM2mRequestSender.class);
-
     private final ObservationServiceImpl observationService;
     private final LwM2mModelProvider modelProvider;
     private final RequestSender sender;

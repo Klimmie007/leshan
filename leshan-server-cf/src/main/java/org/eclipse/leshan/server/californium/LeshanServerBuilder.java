@@ -48,6 +48,7 @@ import org.eclipse.californium.scandium.dtls.x509.StaticNewAdvancedCertificateVe
 import org.eclipse.leshan.core.LwM2m;
 import org.eclipse.leshan.core.californium.DefaultEndpointFactory;
 import org.eclipse.leshan.core.californium.EndpointFactory;
+import org.eclipse.leshan.core.californium.TCPEndpointFactory;
 import org.eclipse.leshan.core.californium.oscore.cf.InMemoryOscoreContextDB;
 import org.eclipse.leshan.core.link.lwm2m.DefaultLwM2mLinkParser;
 import org.eclipse.leshan.core.link.lwm2m.LwM2mLinkParser;
@@ -476,7 +477,7 @@ public class LeshanServerBuilder {
         if (registrationIdProvider == null)
             registrationIdProvider = new RandomStringRegistrationIdProvider();
         if (endpointFactory == null) {
-            endpointFactory = new DefaultEndpointFactory("LWM2M Server", false);
+            endpointFactory = new TCPEndpointFactory("LWM2M Server");
         }
 
         // handle dtlsConfig

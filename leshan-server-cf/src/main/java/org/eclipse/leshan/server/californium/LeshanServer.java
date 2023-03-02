@@ -19,6 +19,7 @@
 package org.eclipse.leshan.server.californium;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -413,9 +414,8 @@ public class LeshanServer {
         coapServer.start();
 
         if (LOG.isInfoEnabled()) {
-            LOG.info("LWM2M server started at {} {}",
-                    getUnsecuredAddress() == null ? "" : "coap://" + getUnsecuredAddress(),
-                    getSecuredAddress() == null ? "" : "coaps://" + getSecuredAddress());
+            LOG.info("LWM2M server started at {} {}", getUnsecuredAddress() == null ? "" : getUnsecuredURI(),
+                    getSecuredAddress() == null ? "" : getSecuredURI());
         }
     }
 
@@ -707,6 +707,22 @@ public class LeshanServer {
             LowerLayerConfig lowerLayerConfig, long timeoutInMs, ResponseCallback<T> responseCallback,
             ErrorCallback errorCallback) {
         requestSender.send(destination, request, lowerLayerConfig, timeoutInMs, responseCallback, errorCallback);
+    }
+
+    public URI getUnsecuredURI() {
+        if (unsecuredEndpoint != null) {
+            return unsecuredEndpoint.getUri();
+        } else {
+            return null;
+        }
+    }
+
+    public URI getSecuredURI() {
+        if (securedEndpoint != null) {
+            return securedEndpoint.getUri();
+        } else {
+            return null;
+        }
     }
 
     /**

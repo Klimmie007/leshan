@@ -29,7 +29,6 @@ import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.core.config.CoapConfig.TrackerMode;
 import org.eclipse.californium.core.network.CoapEndpoint;
-import org.eclipse.californium.elements.Connector;
 import org.eclipse.californium.elements.UDPConnector;
 import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.config.SystemConfig;
@@ -52,6 +51,7 @@ import org.eclipse.leshan.client.send.DataSender;
 import org.eclipse.leshan.core.LwM2mId;
 import org.eclipse.leshan.core.californium.DefaultEndpointFactory;
 import org.eclipse.leshan.core.californium.EndpointFactory;
+import org.eclipse.leshan.core.californium.TCPEndpointFactory;
 import org.eclipse.leshan.core.link.DefaultLinkSerializer;
 import org.eclipse.leshan.core.link.LinkSerializer;
 import org.eclipse.leshan.core.link.lwm2m.attributes.DefaultLwM2mAttributeParser;
@@ -366,16 +366,7 @@ public class LeshanClientBuilder {
             engineFactory = new DefaultRegistrationEngineFactory();
         }
         if (endpointFactory == null) {
-            endpointFactory = new DefaultEndpointFactory("LWM2M Client", true) {
-                @Override
-                protected Connector createSecuredConnector(DtlsConnectorConfig dtlsConfig) {
-                    DTLSConnector dtlsConnector = new DTLSConnector(dtlsConfig);
-                    if (executor != null) {
-                        dtlsConnector.setExecutor(executor);
-                    }
-                    return dtlsConnector;
-                }
-            };
+            endpointFactory = new TCPEndpointFactory("LWM2M Client", true);
         }
         if (bootstrapConsistencyChecker == null) {
             bootstrapConsistencyChecker = new DefaultBootstrapConsistencyChecker();

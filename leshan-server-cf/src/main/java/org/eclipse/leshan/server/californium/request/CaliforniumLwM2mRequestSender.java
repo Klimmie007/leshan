@@ -47,8 +47,6 @@ import org.eclipse.leshan.server.model.LwM2mModelProvider;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.request.LowerLayerConfig;
 import org.eclipse.leshan.server.request.LwM2mRequestSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An implementation of {@link LwM2mRequestSender} and {@link CoapRequestSender} based on Californium.

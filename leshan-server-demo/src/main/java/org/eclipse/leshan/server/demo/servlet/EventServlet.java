@@ -83,6 +83,8 @@ public class EventServlet extends EventSourceServlet {
 
     private static final String EVENT_COAP_LOG = "COAPLOG";
 
+    private static final String EVENT_CANCEL_OBSERVE = "ObserveCancel";
+
     private static final String QUERY_PARAM_ENDPOINT = "ep";
 
     // private static final String EVENT_SAVE_OBSERVATIONS = "SAVE";
@@ -161,6 +163,7 @@ public class EventServlet extends EventSourceServlet {
 
         @Override
         public void cancelled(Observation observation) {
+            sendEvent(EVENT_CANCEL_OBSERVE, observation.toString(), observation.getEndpoint());
         }
 
         @Override
@@ -194,7 +197,7 @@ public class EventServlet extends EventSourceServlet {
         public void onResponse(CompositeObservation observation, Registration registration,
                 ObserveCompositeResponse response) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Received composite notificationfrom [{}] containing value [{}]", response.getContent());
+                LOG.debug("Received composite notification from [{}] containing value [{}]", response.getContent());
             }
             String jsonContent = null;
             String jsonListOfPath = null;

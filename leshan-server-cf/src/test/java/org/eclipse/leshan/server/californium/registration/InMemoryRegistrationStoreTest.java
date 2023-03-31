@@ -55,7 +55,7 @@ public class InMemoryRegistrationStoreTest {
     private final int port = 23452;
     private final Long lifetime = 10000L;
     private final String sms = "0171-32423545";
-    private final EnumSet<BindingMode> binding = EnumSet.of(BindingMode.U, BindingMode.Q, BindingMode.S);
+    private final EnumSet<BindingMode> binding = EnumSet.of(BindingMode.T, BindingMode.Q, BindingMode.S);
     private final Link[] objectLinks = new Link[] { new Link("/3") };
     private final String registrationId = "4711";
     private final Token exampleToken = Token.EMPTY;

@@ -44,6 +44,7 @@ import org.eclipse.leshan.core.node.LwM2mNode;
 import org.eclipse.leshan.core.node.codec.CodecException;
 import org.eclipse.leshan.core.node.codec.LwM2mDecoder;
 import org.eclipse.leshan.core.node.codec.LwM2mEncoder;
+import org.eclipse.leshan.core.request.CancelObservationRequest;
 import org.eclipse.leshan.core.request.DownlinkRequest;
 import org.eclipse.leshan.core.request.Identity;
 import org.eclipse.leshan.core.request.exception.InvalidResponseException;
@@ -78,6 +79,8 @@ public class RequestSender implements Destroyable {
     private final LwM2mDecoder decoder;
     private final LwM2mEncoder encoder;
     private final LwM2mLinkParser linkParser;
+
+    private Request requestBuilt;
 
     // A map which contains all ongoing CoAP requests
     // This is used to be able to cancel request
@@ -138,29 +141,34 @@ public class RequestSender implements Destroyable {
         CoapRequestBuilder coapClientRequestBuilder = new CoapRequestBuilder(destination, rootPath, sessionId,
                 endpointName, model, encoder, allowConnectionInitiation, lowerLayerConfig);
         request.accept(coapClientRequestBuilder);
-        final Request coapRequest = coapClientRequestBuilder.getRequest();
+        requestBuilt = coapClientRequestBuilder.getRequest();
+        requestBuilt.setScheme("coap+tcp");
 
         // Send CoAP request synchronously
-        SyncRequestObserver<T> syncMessageObserver = new SyncRequestObserver<T>(coapRequest, timeoutInMs) {
+        SyncRequestObserver<T> syncMessageObserver = new SyncRequestObserver<T>(requestBuilt, timeoutInMs) {
             @Override
             public T buildResponse(Response coapResponse) {
                 // Build LwM2m response
-                LwM2mResponseBuilder<T> lwm2mResponseBuilder = new LwM2mResponseBuilder<>(coapRequest, coapResponse,
+                LwM2mResponseBuilder<T> lwm2mResponseBuilder = new LwM2mResponseBuilder<>(requestBuilt, coapResponse,
                         endpointName, model, decoder, linkParser);
                 request.accept(lwm2mResponseBuilder);
                 return lwm2mResponseBuilder.getResponse();
             }
         };
-        coapRequest.addMessageObserver(syncMessageObserver);
+        requestBuilt.addMessageObserver(syncMessageObserver);
 
         // Store pending request to be able to cancel it later
-        addOngoingRequest(sessionId, coapRequest);
+        addOngoingRequest(sessionId, requestBuilt);
+
+        if (request instanceof CancelObservationRequest || request instanceof CancelObservationRequest) {
+            LOG.error("Fuck this shit, I'm out");
+        }
 
         // Send CoAP request asynchronously
         if (destination.isSecure())
-            secureEndpoint.sendRequest(coapRequest);
+            secureEndpoint.sendRequest(requestBuilt);
         else
-            nonSecureEndpoint.sendRequest(coapRequest);
+            nonSecureEndpoint.sendRequest(requestBuilt);
 
         // Wait for response, then return it
         return syncMessageObserver.waitForResponse();
@@ -214,30 +222,31 @@ public class RequestSender implements Destroyable {
         CoapRequestBuilder coapClientRequestBuilder = new CoapRequestBuilder(destination, rootPath, sessionId,
                 endpointName, model, encoder, allowConnectionInitiation, lowerLayerConfig);
         request.accept(coapClientRequestBuilder);
-        final Request coapRequest = coapClientRequestBuilder.getRequest();
+        requestBuilt = coapClientRequestBuilder.getRequest();
+        requestBuilt.setScheme("coap+tcp");
 
         // Add CoAP request callback
-        MessageObserver obs = new AsyncRequestObserver<T>(coapRequest, responseCallback, errorCallback, timeoutInMs,
+        MessageObserver obs = new AsyncRequestObserver<T>(requestBuilt, responseCallback, errorCallback, timeoutInMs,
                 executor) {
             @Override
             public T buildResponse(Response coapResponse) {
                 // Build LwM2m response
-                LwM2mResponseBuilder<T> lwm2mResponseBuilder = new LwM2mResponseBuilder<>(coapRequest, coapResponse,
+                LwM2mResponseBuilder<T> lwm2mResponseBuilder = new LwM2mResponseBuilder<>(requestBuilt, coapResponse,
                         endpointName, model, decoder, linkParser);
                 request.accept(lwm2mResponseBuilder);
                 return lwm2mResponseBuilder.getResponse();
             }
         };
-        coapRequest.addMessageObserver(obs);
+        requestBuilt.addMessageObserver(obs);
 
         // Store pending request to be able to cancel it later
-        addOngoingRequest(sessionId, coapRequest);
+        addOngoingRequest(sessionId, requestBuilt);
 
         // Send CoAP request asynchronously
         if (destination.isSecure())
-            secureEndpoint.sendRequest(coapRequest);
+            secureEndpoint.sendRequest(requestBuilt);
         else
-            nonSecureEndpoint.sendRequest(coapRequest);
+            nonSecureEndpoint.sendRequest(requestBuilt);
     }
 
     /**

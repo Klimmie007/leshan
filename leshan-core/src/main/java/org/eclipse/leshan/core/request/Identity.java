@@ -23,6 +23,8 @@ import java.security.PublicKey;
 
 import org.eclipse.leshan.core.oscore.OscoreIdentity;
 import org.eclipse.leshan.core.util.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Contains all data which could identify a peer like peer address, PSK identity, Raw Public Key or Certificate Common
@@ -30,20 +32,24 @@ import org.eclipse.leshan.core.util.Validate;
  */
 public class Identity {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Identity.class);
     private final InetSocketAddress peerAddress;
     private final String pskIdentity;
     private final PublicKey rawPublicKey;
     private final String x509CommonName;
     private final OscoreIdentity oscoreIdentity;
+    private final boolean TCP;
 
     private Identity(InetSocketAddress peerAddress, String pskIdentity, PublicKey rawPublicKey, String x509CommonName,
-            OscoreIdentity oscoreIdentity) {
+            OscoreIdentity oscoreIdentity, boolean isTCP) {
         Validate.notNull(peerAddress);
         this.peerAddress = peerAddress;
         this.pskIdentity = pskIdentity;
         this.rawPublicKey = rawPublicKey;
         this.x509CommonName = x509CommonName;
         this.oscoreIdentity = oscoreIdentity;
+        this.TCP = isTCP;
+        LOG.warn("IS FUCKING TCP!");
     }
 
     protected Identity(Identity identity) {
@@ -52,6 +58,7 @@ public class Identity {
         this.rawPublicKey = identity.rawPublicKey;
         this.x509CommonName = identity.x509CommonName;
         this.oscoreIdentity = identity.oscoreIdentity;
+        this.TCP = identity.TCP;
     }
 
     public InetSocketAddress getPeerAddress() {
@@ -90,48 +97,52 @@ public class Identity {
         return oscoreIdentity != null;
     }
 
+    public boolean isTCP() {
+        return TCP;
+    }
+
     public boolean isSecure() {
         return isPSK() || isRPK() || isX509();
     }
 
     public static Identity unsecure(InetSocketAddress peerAddress) {
-        return new Identity(peerAddress, null, null, null, null);
+        return new Identity(peerAddress, null, null, null, null, true);
     }
 
     public static Identity unsecure(InetAddress address, int port) {
-        return new Identity(new InetSocketAddress(address, port), null, null, null, null);
+        return new Identity(new InetSocketAddress(address, port), null, null, null, null, true);
     }
 
     public static Identity psk(InetSocketAddress peerAddress, String identity) {
-        return new Identity(peerAddress, identity, null, null, null);
+        return new Identity(peerAddress, identity, null, null, null, true);
     }
 
     public static Identity psk(InetAddress address, int port, String identity) {
-        return new Identity(new InetSocketAddress(address, port), identity, null, null, null);
+        return new Identity(new InetSocketAddress(address, port), identity, null, null, null, true);
     }
 
     public static Identity rpk(InetSocketAddress peerAddress, PublicKey publicKey) {
-        return new Identity(peerAddress, null, publicKey, null, null);
+        return new Identity(peerAddress, null, publicKey, null, null, true);
     }
 
     public static Identity rpk(InetAddress address, int port, PublicKey publicKey) {
-        return new Identity(new InetSocketAddress(address, port), null, publicKey, null, null);
+        return new Identity(new InetSocketAddress(address, port), null, publicKey, null, null, true);
     }
 
     public static Identity x509(InetSocketAddress peerAddress, String commonName) {
-        return new Identity(peerAddress, null, null, commonName, null);
+        return new Identity(peerAddress, null, null, commonName, null, true);
     }
 
     public static Identity x509(InetAddress address, int port, String commonName) {
-        return new Identity(new InetSocketAddress(address, port), null, null, commonName, null);
+        return new Identity(new InetSocketAddress(address, port), null, null, commonName, null, true);
     }
 
     public static Identity oscoreOnly(InetSocketAddress peerAddress, OscoreIdentity oscoreIdentity) {
-        return new Identity(peerAddress, null, null, null, oscoreIdentity);
+        return new Identity(peerAddress, null, null, null, oscoreIdentity, true);
     }
 
     public static Identity oscoreOnly(InetAddress address, int port, OscoreIdentity oscoreIdentity) {
-        return new Identity(new InetSocketAddress(address, port), null, null, null, oscoreIdentity);
+        return new Identity(new InetSocketAddress(address, port), null, null, null, oscoreIdentity, true);
     }
 
     @Override

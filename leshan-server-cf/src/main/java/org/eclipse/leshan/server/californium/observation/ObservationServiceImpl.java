@@ -81,7 +81,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
     private Endpoint nonSecureEndpoint;
     private final boolean updateRegistrationOnNotification;
 
-    private final List<ObservationListener> listeners = new CopyOnWriteArrayList<>();;
+    private final List<ObservationListener> listeners = new CopyOnWriteArrayList<>();
 
     /**
      * Creates an instance of {@link ObservationServiceImpl}
@@ -105,6 +105,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
      *
      * @since 1.1
      */
+
     public ObservationServiceImpl(CaliforniumRegistrationStore store, LwM2mModelProvider modelProvider,
             LwM2mDecoder decoder, boolean updateRegistrationOnNotification) {
         this.registrationStore = store;
@@ -198,8 +199,9 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
         Token token = new Token(observation.getId());
         if (secureEndpoint != null)
             secureEndpoint.cancelObservation(token);
-        if (nonSecureEndpoint != null)
+        if (nonSecureEndpoint != null) {
             nonSecureEndpoint.cancelObservation(token);
+        }
 
         for (ObservationListener listener : listeners) {
             listener.cancelled(observation);
@@ -277,7 +279,7 @@ public class ObservationServiceImpl implements ObservationService, NotificationL
 
     @Override
     public void onNotification(Request coapRequest, Response coapResponse) {
-        LOG.info("notification received for request {}: {}", coapRequest, coapResponse);
+        LOG.info("notification received for request [{}]: [{}]", coapRequest, coapResponse);// LOGGING PLACE
 
         if (listeners.isEmpty())
             return;

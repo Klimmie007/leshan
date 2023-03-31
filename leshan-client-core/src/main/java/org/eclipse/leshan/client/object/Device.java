@@ -60,7 +60,7 @@ public class Device extends BaseInstanceEnabler {
         this.manufacturer = manufacturer;
         this.modelNumber = modelNumber;
         this.serialNumber = serialNumber;
-        this.supportedBinding = EnumSet.of(BindingMode.U);
+        this.supportedBinding = EnumSet.of(BindingMode.T);
     }
 
     public Device(String manufacturer, String modelNumber, String serialNumber, EnumSet<BindingMode> supportedBinding) {

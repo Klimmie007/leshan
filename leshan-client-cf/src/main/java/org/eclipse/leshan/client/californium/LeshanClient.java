@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
@@ -31,6 +32,7 @@ import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.server.resources.Resource;
 import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.elements.util.ExecutorsUtil;
 import org.eclipse.californium.elements.util.NamedThreadFactory;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig.Builder;
@@ -236,6 +238,7 @@ public class LeshanClient implements LwM2mClient {
     protected CaliforniumEndpointsManager createEndpointsManager(InetSocketAddress localAddress,
             Configuration coapConfig, Builder dtlsConfigBuilder, List<Certificate> trustStore,
             EndpointFactory endpointFactory) {
+        LOG.warn("TCP_Connect_timeout: [{}] seconds", coapConfig.get(TcpConfig.TCP_CONNECT_TIMEOUT, TimeUnit.SECONDS));
         return new CaliforniumEndpointsManager(localAddress, coapConfig, dtlsConfigBuilder, trustStore,
                 endpointFactory);
     }

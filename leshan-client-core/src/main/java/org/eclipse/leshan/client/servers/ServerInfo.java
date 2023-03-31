@@ -81,9 +81,9 @@ public class ServerInfo {
         // define port
         int port = serverUri.getPort();
         if (port == -1) {
-            if ("coap".equals(serverUri.getScheme())) {
+            if ("coap+tcp".equals(serverUri.getScheme())) {
                 port = LwM2m.DEFAULT_COAP_PORT;
-            } else if ("coaps".equals(serverUri.getScheme())) {
+            } else if ("coaps+tcp".equals(serverUri.getScheme())) {
                 port = LwM2m.DEFAULT_COAP_SECURE_PORT;
             }
         }
@@ -91,9 +91,9 @@ public class ServerInfo {
         String scheme = serverUri.getScheme();
         if (scheme == null) {
             if (port == LwM2m.DEFAULT_COAP_PORT) {
-                scheme = "coap";
+                scheme = "coap+tcp";
             } else if (port == LwM2m.DEFAULT_COAP_SECURE_PORT) {
-                scheme = "coaps";
+                scheme = "coaps+tcp";
             }
         }
         // create the full URI

@@ -107,9 +107,9 @@ public class ServerIdentity {
     public String getUri() {
         StringBuilder uri = new StringBuilder();
         if (identity.isSecure())
-            uri.append("coaps://");
+            uri.append("coaps+tcp://");
         else
-            uri.append("coap://");
+            uri.append("coap+tcp://");
         uri.append(identity.getPeerAddress().getHostString());
         uri.append(":");
         uri.append(identity.getPeerAddress().getPort());

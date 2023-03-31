@@ -67,7 +67,7 @@ public class Server extends BaseInstanceEnabler {
     }
 
     public Server(int shortServerId, long lifetime) {
-        this(shortServerId, lifetime, EnumSet.of(BindingMode.U), false, BindingMode.U);
+        this(shortServerId, lifetime, EnumSet.of(BindingMode.T), false, BindingMode.T);
     }
 
     @Override

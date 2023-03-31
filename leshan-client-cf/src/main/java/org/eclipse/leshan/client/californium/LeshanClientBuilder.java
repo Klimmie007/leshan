@@ -24,6 +24,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.config.CoapConfig;
@@ -32,6 +33,7 @@ import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.elements.UDPConnector;
 import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.config.SystemConfig;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.elements.config.UdpConfig;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConfig;
@@ -66,12 +68,15 @@ import org.eclipse.leshan.core.request.BindingMode;
 import org.eclipse.leshan.core.request.BootstrapRequest;
 import org.eclipse.leshan.core.request.WriteAttributesRequest;
 import org.eclipse.leshan.core.util.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Helper class to build and configure a Californium based Leshan Lightweight M2M client.
  */
 public class LeshanClientBuilder {
 
+    private static final Logger LOG = LoggerFactory.getLogger(LeshanClientBuilder.class);
     private final String endpoint;
 
     private InetSocketAddress localAddress;
@@ -317,10 +322,11 @@ public class LeshanClientBuilder {
 
     public static Configuration createDefaultCoapConfiguration() {
         Configuration networkConfig = new Configuration(CoapConfig.DEFINITIONS, DtlsConfig.DEFINITIONS,
-                UdpConfig.DEFINITIONS, SystemConfig.DEFINITIONS);
+                UdpConfig.DEFINITIONS, SystemConfig.DEFINITIONS, TcpConfig.DEFINITIONS);
         networkConfig.set(CoapConfig.MID_TRACKER, TrackerMode.NULL);
         networkConfig.set(CoapConfig.MAX_ACTIVE_PEERS, 10);
         networkConfig.set(CoapConfig.PROTOCOL_STAGE_THREAD_COUNT, 1);
+        networkConfig.set(CoapConfig.MARK_AND_SWEEP_INTERVAL, 5, TimeUnit.MINUTES);
         networkConfig.set(DtlsConfig.DTLS_MAX_CONNECTIONS, 10);
         networkConfig.set(DtlsConfig.DTLS_RECEIVER_THREAD_COUNT, 1);
         networkConfig.set(DtlsConfig.DTLS_CONNECTOR_THREAD_COUNT, 1);
@@ -329,6 +335,10 @@ public class LeshanClientBuilder {
         // Set it to null to allow automatic mode
         // See org.eclipse.leshan.client.californium.CaliforniumEndpointsManager
         networkConfig.set(DtlsConfig.DTLS_ROLE, null);
+        networkConfig.set(TcpConfig.TCP_CONNECTION_IDLE_TIMEOUT, 5, TimeUnit.MINUTES);
+        networkConfig.set(TcpConfig.TCP_CONNECT_TIMEOUT, 5, TimeUnit.MINUTES);
+        LOG.warn("TCP_Connect_timeout: [{}] seconds",
+                networkConfig.get(TcpConfig.TCP_CONNECT_TIMEOUT, TimeUnit.SECONDS));
 
         return networkConfig;
     }
@@ -343,10 +353,10 @@ public class LeshanClientBuilder {
         if (objectEnablers == null) {
             ObjectsInitializer initializer = new ObjectsInitializer();
             initializer.setInstancesForObject(LwM2mId.SECURITY,
-                    Security.noSec("coap://leshan.eclipseprojects.io:5683", 12345));
+                    Security.noSec("coap+tcp://leshan.eclipseprojects.io:5683", 12345));
             initializer.setInstancesForObject(LwM2mId.SERVER, new Server(12345, 5 * 60));
             initializer.setInstancesForObject(LwM2mId.DEVICE,
-                    new Device("Eclipse Leshan", "model12345", "12345", EnumSet.of(BindingMode.U)));
+                    new Device("Eclipse Leshan", "model12345", "12345", EnumSet.of(BindingMode.T)));
             objectEnablers = initializer.createAll();
         }
         if (dataSenders == null)

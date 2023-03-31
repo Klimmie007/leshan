@@ -28,18 +28,18 @@ public class ServerTest {
     @Test
     public void test_server_getUri_with_localhost_hostname() {
         ServerIdentity server = new ServerIdentity(Identity.unsecure(new InetSocketAddress("localhost", 5683)), 123l);
-        assertEquals("coap://localhost:5683", server.getUri());
+        assertEquals("coap+tcp://localhost:5683", server.getUri());
     }
 
     @Test
     public void test_server_getUri_with_unknown_hostname() {
         ServerIdentity server = new ServerIdentity(Identity.unsecure(new InetSocketAddress("unknownhost", 5683)), 123l);
-        assertEquals("coap://unknownhost:5683", server.getUri());
+        assertEquals("coap+tcp://unknownhost:5683", server.getUri());
     }
 
     @Test
     public void test_server_getUri_with_ipaddress() {
         ServerIdentity server = new ServerIdentity(Identity.unsecure(new InetSocketAddress("50.0.0.1", 5683)), 123l);
-        assertEquals("coap://50.0.0.1:5683", server.getUri());
+        assertEquals("coap+tcp://50.0.0.1:5683", server.getUri());
     }
 }

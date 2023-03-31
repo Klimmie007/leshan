@@ -200,7 +200,7 @@ public class MyDevice extends BaseInstanceEnabler implements Destroyable {
     }
 
     private String getSupportedBinding() {
-        return "U";
+        return "T";
     }
 
     private String getDeviceType() {

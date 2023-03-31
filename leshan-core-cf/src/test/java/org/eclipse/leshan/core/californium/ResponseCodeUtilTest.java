@@ -15,7 +15,12 @@
  *******************************************************************************/
 package org.eclipse.leshan.core.californium;
 
+import java.net.InetSocketAddress;
+
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
+import org.eclipse.californium.elements.Connector;
+import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,5 +88,17 @@ public class ResponseCodeUtilTest {
         coapResponseCode = ResponseCodeUtil.toCoapResponseCode(new org.eclipse.leshan.core.ResponseCode(509));
         Assert.assertEquals(ResponseCode.INTERNAL_SERVER_ERROR, coapResponseCode);
 
+    }
+
+    @Test
+    public void endpointPersists() {
+        TCPEndpointFactory factory = new TCPEndpointFactory();
+        Configuration config = new Configuration(TcpConfig.DEFINITIONS);
+        InetSocketAddress address = new InetSocketAddress(0);
+
+        Connector connector1 = factory.createUnsecuredConnector(address, config);
+        Connector connector2 = factory.createUnsecuredConnector(address, config);
+
+        Assert.assertEquals(connector1.getAddress().getPort(), connector2.getAddress().getPort());
     }
 }

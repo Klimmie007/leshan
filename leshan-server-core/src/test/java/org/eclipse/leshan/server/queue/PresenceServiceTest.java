@@ -77,7 +77,7 @@ public class PresenceServiceTest {
         Registration.Builder builder = new Registration.Builder("ID", "urn:client",
                 Identity.unsecure(Inet4Address.getLoopbackAddress(), 12354));
 
-        Registration reg = builder.bindingMode(EnumSet.of(BindingMode.U, BindingMode.Q)).build();
+        Registration reg = builder.bindingMode(EnumSet.of(BindingMode.T, BindingMode.Q)).build();
         presenceService.setAwake(reg);
         return reg;
     }

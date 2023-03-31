@@ -175,8 +175,8 @@ export default {
   },
   beforeMount() {
     this.axios.get("api/server/endpoint").then((response) => {
-      this.coapurl = `coap://${location.hostname}:${response.data.unsecuredEndpointPort}`;
-      this.coapsurl = `coaps://${location.hostname}:${response.data.securedEndpointPort}`;
+      this.coapurl = `coap+tcp://${location.hostname}:${response.data.unsecuredEndpointPort}`;
+      this.coapsurl = `coaps+tcp://${location.hostname}:${response.data.securedEndpointPort}`;
     });
     this.axios.get("api/server/security").then((response) => {
       if (response.data.certificate) {

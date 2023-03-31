@@ -50,8 +50,25 @@ Contributors:
     </dependency>
     <dependency>
       <groupId>org.eclipse.californium</groupId>
-      <artifactId>element-connector-tcp-netty</artifactId>
+      <artifactId>element-connector</artifactId>
       <version>${californium.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.californium</groupId>
+      <artifactId>element-connector-tcp-netty</artifactId>
+      <version>4.0.0</version>
+      <scope>system</scope>
+      <systemPath>C:/Users/kamil.milewski/Documents/leshan/californium/element-connector-tcp-netty/target/element-connector-tcp-netty-4.0.0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+      <version>4.1.87.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
+      <version>4.1.87.Final</version>
     </dependency>
     <!-- test dependencies -->
     <dependency>

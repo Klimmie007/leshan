@@ -133,8 +133,8 @@ public class LeshanBootstrapServer {
 
         if (LOG.isInfoEnabled()) {
             LOG.info("Bootstrap server started at {} {}",
-                    getUnsecuredAddress() == null ? "" : "coap://" + getUnsecuredAddress(),
-                    getSecuredAddress() == null ? "" : "coaps://" + getSecuredAddress());
+                    getUnsecuredAddress() == null ? "" : "coap+tcp://" + getUnsecuredAddress(),
+                    getSecuredAddress() == null ? "" : "coaps+tcp://" + getSecuredAddress());
         }
     }
 

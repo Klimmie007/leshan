@@ -38,6 +38,8 @@ import org.eclipse.leshan.core.request.SendRequest;
 import org.eclipse.leshan.core.request.UpdateRequest;
 import org.eclipse.leshan.core.request.UplinkRequest;
 import org.eclipse.leshan.core.request.UplinkRequestVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is able to create CoAP request from LWM2M {@link UplinkRequest}.
@@ -45,7 +47,7 @@ import org.eclipse.leshan.core.request.UplinkRequestVisitor;
  * Call <code>CoapRequestBuilder#visit(lwm2mRequest)</code>, then get the result using {@link #getRequest()}
  */
 public class CoapRequestBuilder implements UplinkRequestVisitor {
-
+    private static final Logger LOG = LoggerFactory.getLogger(CoapRequestBuilder.class);
     protected Request coapRequest;
     protected final Identity server;
     protected final LwM2mEncoder encoder;
@@ -171,11 +173,15 @@ public class CoapRequestBuilder implements UplinkRequestVisitor {
     }
 
     protected void buildRequestSettings() {
+
         EndpointContext context = EndpointContextUtil.extractContext(server, true);
         coapRequest.setDestinationContext(context);
 
         if (server.isOSCORE()) {
             coapRequest.getOptions().setOscore(Bytes.EMPTY);
+        }
+        if (server.isTCP()) {
+            coapRequest.setScheme("coap+tcp");
         }
     }
 }

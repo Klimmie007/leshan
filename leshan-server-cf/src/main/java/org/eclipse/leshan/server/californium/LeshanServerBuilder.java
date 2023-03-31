@@ -34,6 +34,7 @@ import org.eclipse.californium.elements.DtlsEndpointContext;
 import org.eclipse.californium.elements.UDPConnector;
 import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.config.SystemConfig;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.elements.config.UdpConfig;
 import org.eclipse.californium.oscore.OSCoreCtxDB;
 import org.eclipse.californium.scandium.DTLSConnector;
@@ -429,12 +430,15 @@ public class LeshanServerBuilder {
      */
     public static Configuration createDefaultCoapConfiguration() {
         Configuration networkConfig = new Configuration(CoapConfig.DEFINITIONS, DtlsConfig.DEFINITIONS,
-                UdpConfig.DEFINITIONS, SystemConfig.DEFINITIONS);
+                UdpConfig.DEFINITIONS, SystemConfig.DEFINITIONS, TcpConfig.DEFINITIONS);
         networkConfig.set(CoapConfig.MID_TRACKER, TrackerMode.NULL);
+        networkConfig.set(CoapConfig.MARK_AND_SWEEP_INTERVAL, 5, TimeUnit.MINUTES);
         // Do no allow Server to initiated Handshake by default, for U device request will be allowed to initiate
         // handshake (see Registration.shouldInitiateConnection())
         networkConfig.set(DtlsConfig.DTLS_DEFAULT_HANDSHAKE_MODE, DtlsEndpointContext.HANDSHAKE_MODE_NONE);
         networkConfig.set(DtlsConfig.DTLS_ROLE, DtlsRole.BOTH);
+        networkConfig.set(TcpConfig.TCP_CONNECT_TIMEOUT, 5, TimeUnit.MINUTES);
+        networkConfig.set(TcpConfig.TCP_CONNECTION_IDLE_TIMEOUT, 5, TimeUnit.MINUTES);
 
         return networkConfig;
     }

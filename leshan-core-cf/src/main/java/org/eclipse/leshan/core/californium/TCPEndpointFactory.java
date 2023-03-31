@@ -60,7 +60,7 @@ public class TCPEndpointFactory extends DefaultEndpointFactory {
     protected Connector createUnsecuredConnector(InetSocketAddress address, Configuration coapConfig) {
         if (coapConfig != null) {
             if (isClient) {
-                return new TcpClientConnector(coapConfig);
+                return new TcpClientConnector(coapConfig, address);
             } else {
                 return new TcpServerConnector(address, coapConfig);
             }

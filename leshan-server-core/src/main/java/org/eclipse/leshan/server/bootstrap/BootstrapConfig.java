@@ -134,7 +134,7 @@ public class BootstrapConfig {
          * This Resource defines the transport binding configured for the LwM2M Client. If the LwM2M Client supports the
          * binding specified in this Resource, the LwM2M Client MUST use that transport for the Current Binding Mode.
          */
-        public EnumSet<BindingMode> binding = EnumSet.of(BindingMode.U);
+        public EnumSet<BindingMode> binding = EnumSet.of(BindingMode.T);
 
         /**
          * If this resource is defined, it provides a link to the APN connection profile Object Instance (OMNA

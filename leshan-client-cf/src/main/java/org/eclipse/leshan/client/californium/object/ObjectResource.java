@@ -154,6 +154,7 @@ public class ObjectResource extends LwM2mClientCoapResource implements ObjectLis
             if (exchange.getRequestOptions().hasObserve()) {
                 ObserveRequest observeRequest = new ObserveRequest(requestedContentFormat, URI, coapRequest);
                 ObserveResponse response = nodeEnabler.observe(identity, observeRequest);
+                LOGGER.warn("Response received: " + response.toString());
                 if (response.getCode() == org.eclipse.leshan.core.ResponseCode.CONTENT) {
                     LwM2mPath path = getPath(URI);
                     LwM2mNode content = response.getContent();
@@ -161,10 +162,8 @@ public class ObjectResource extends LwM2mClientCoapResource implements ObjectLis
                     ContentFormat format = getContentFormat(observeRequest, requestedContentFormat);
                     exchange.respond(ResponseCode.CONTENT, encoder.encode(content, format, path, model),
                             format.getCode());
-                    return;
                 } else {
                     exchange.respond(toCoapResponseCode(response.getCode()), response.getErrorMessage());
-                    return;
                 }
             } else {
                 if (identity.isLwm2mBootstrapServer()) {

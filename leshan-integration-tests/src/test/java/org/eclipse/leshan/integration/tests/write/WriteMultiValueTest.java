@@ -125,7 +125,7 @@ public class WriteMultiValueTest {
         LwM2mResource lifetime = LwM2mSingleResource.newIntegerResource(1, 120);
         LwM2mResource defaultMinPeriod = LwM2mSingleResource.newIntegerResource(2, 10);
         LwM2mResource notificationStoring = LwM2mSingleResource.newBooleanResource(6, false);
-        LwM2mResource binding = LwM2mSingleResource.newStringResource(7, "U");
+        LwM2mResource binding = LwM2mSingleResource.newStringResource(7, "T");
         response = helper.server.send(helper.getCurrentRegistration(), new WriteRequest(Mode.REPLACE, contentFormat, 1,
                 0, lifetime, defaultMinPeriod, notificationStoring, binding));
 

@@ -56,6 +56,8 @@ import org.eclipse.leshan.core.request.WriteCompositeRequest;
 import org.eclipse.leshan.core.request.WriteRequest;
 import org.eclipse.leshan.core.util.StringUtils;
 import org.eclipse.leshan.server.request.LowerLayerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is able to create CoAP request from LWM2M {@link DownlinkRequest}.
@@ -64,6 +66,7 @@ import org.eclipse.leshan.server.request.LowerLayerConfig;
  */
 public class CoapRequestBuilder implements DownlinkRequestVisitor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CoapRequestBuilder.class);
     private Request coapRequest;
 
     // client information

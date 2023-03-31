@@ -45,7 +45,11 @@ import org.eclipse.leshan.core.node.LwM2mPath;
 import org.eclipse.leshan.core.node.codec.CodecException;
 import org.eclipse.leshan.core.node.codec.LwM2mDecoder;
 import org.eclipse.leshan.core.node.codec.LwM2mEncoder;
+import org.eclipse.leshan.core.observation.CompositeObservation;
 import org.eclipse.leshan.core.observation.Observation;
+import org.eclipse.leshan.core.observation.SingleObservation;
+import org.eclipse.leshan.core.request.CancelCompositeObservationRequest;
+import org.eclipse.leshan.core.request.CancelObservationRequest;
 import org.eclipse.leshan.core.request.ContentFormat;
 import org.eclipse.leshan.core.request.DownlinkRequest;
 import org.eclipse.leshan.core.request.ObserveCompositeRequest;
@@ -59,6 +63,8 @@ import org.eclipse.leshan.core.request.exception.SendFailedException;
 import org.eclipse.leshan.core.request.exception.TimeoutException;
 import org.eclipse.leshan.core.response.ErrorCallback;
 import org.eclipse.leshan.core.response.LwM2mResponse;
+import org.eclipse.leshan.core.response.ObserveCompositeResponse;
+import org.eclipse.leshan.core.response.ObserveResponse;
 import org.eclipse.leshan.core.response.ResponseCallback;
 import org.eclipse.leshan.core.util.Validate;
 import org.eclipse.leshan.server.californium.observation.ObservationServiceImpl;
@@ -69,6 +75,7 @@ import org.eclipse.leshan.server.californium.request.CaliforniumQueueModeRequest
 import org.eclipse.leshan.server.californium.request.CoapRequestSender;
 import org.eclipse.leshan.server.californium.send.SendResource;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
+import org.eclipse.leshan.server.observation.ObservationListener;
 import org.eclipse.leshan.server.observation.ObservationService;
 import org.eclipse.leshan.server.queue.ClientAwakeTimeProvider;
 import org.eclipse.leshan.server.queue.PresenceListener;
@@ -270,6 +277,53 @@ public class LeshanServer {
 
         ObservationServiceImpl observationService = new ObservationServiceImpl(registrationStore, modelProvider,
                 decoder, updateRegistrationOnNotification);
+
+        observationService.addListener(new ObservationListener() {
+            @Override
+            public void newObservation(Observation observation, Registration registration) {
+
+            }
+
+            @Override
+            public void newObservationWithoutRegistration(Observation observation, String endpoint) {
+
+            }
+
+            @Override
+            public void cancelled(Observation observation) {
+                if (observation instanceof SingleObservation) {
+                    try {
+                        send(registrationStore.getRegistrationByEndpoint(observation.getEndpoint()),
+                                new CancelObservationRequest((SingleObservation) observation));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else if (observation instanceof CompositeObservation) {
+                    try {
+                        send(registrationStore.getRegistrationByEndpoint(observation.getEndpoint()),
+                                new CancelCompositeObservationRequest((CompositeObservation) observation));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            @Override
+            public void onResponse(SingleObservation observation, Registration registration, ObserveResponse response) {
+
+            }
+
+            @Override
+            public void onResponse(CompositeObservation observation, Registration registration,
+                    ObserveCompositeResponse response) {
+
+            }
+
+            @Override
+            public void onError(Observation observation, Registration registration, Exception error) {
+
+            }
+        });
 
         if (unsecuredEndpoint != null) {
             unsecuredEndpoint.addNotificationListener(observationService);

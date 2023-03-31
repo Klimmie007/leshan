@@ -708,7 +708,7 @@ public class Registration {
             rootPath = rootPath == null ? "/" : rootPath;
             lifeTimeInSec = lifeTimeInSec == null ? DEFAULT_LIFETIME_IN_SEC : lifeTimeInSec;
             lwM2mVersion = lwM2mVersion == null ? LwM2mVersion.getDefault() : lwM2mVersion;
-            bindingMode = bindingMode == null ? EnumSet.of(BindingMode.U) : bindingMode;
+            bindingMode = bindingMode == null ? EnumSet.of(BindingMode.T) : bindingMode;
             queueMode = queueMode == null && lwM2mVersion.newerThan(LwM2mVersion.V1_0) ? Boolean.FALSE : queueMode;
             registrationDate = registrationDate == null ? new Date() : registrationDate;
             lastUpdate = lastUpdate == null ? new Date() : lastUpdate;

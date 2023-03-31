@@ -31,6 +31,8 @@ import org.eclipse.californium.oscore.OSCoreCoapStackFactory;
 import org.eclipse.californium.oscore.OSCoreCtxDB;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A default implementation of {@link EndpointFactory}.
@@ -40,6 +42,7 @@ import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
  * E.g. This could be useful if you need to use a custom {@link Connector}.
  */
 public class DefaultEndpointFactory implements EndpointFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultEndpointFactory.class);
 
     protected EndpointContextMatcher securedContextMatcher;
     protected EndpointContextMatcher unsecuredContextMatcher;
@@ -126,9 +129,9 @@ public class DefaultEndpointFactory implements EndpointFactory {
         builder.setConnector(createUnsecuredConnector(address, coapConfig));
         builder.setConfiguration(coapConfig);
         if (loggingTag != null) {
-            builder.setLoggingTag("[" + loggingTag + "-coap://]");
+            builder.setLoggingTag("[" + loggingTag + "-coap+tcp://]");
         } else {
-            builder.setLoggingTag("[coap://]");
+            builder.setLoggingTag("[coap+tcp://]");
         }
         if (unsecuredContextMatcher != null) {
             builder.setEndpointContextMatcher(unsecuredContextMatcher);

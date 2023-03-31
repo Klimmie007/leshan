@@ -118,7 +118,7 @@ public class DummyInstanceEnabler extends SimpleInstanceEnabler {
             values.put(0, createDefaultOpaqueValueFor(objectModel, resourceModel));
             break;
         default:
-            // this should not happened
+            // this should not happen
             values = null;
             break;
         }

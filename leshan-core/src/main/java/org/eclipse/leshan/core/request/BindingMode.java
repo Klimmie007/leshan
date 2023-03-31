@@ -45,7 +45,6 @@ public enum BindingMode {
      */
     public String isValidFor(LwM2mVersion targetVersion) {
         switch (this) {
-        case T:
         case N:
             if (targetVersion.olderThan(LwM2mVersion.V1_1)) {
                 return String.format("%s is supported since LWM2M 1.1", this);

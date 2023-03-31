@@ -80,8 +80,8 @@ public class LeshanClientDemoCLI implements Runnable {
                 description = { //
                         "Set the server URL. If port is missing it will be added automatically with default value.", //
                         "Default: ", //
-                        "  - " + DEFAULT_COAP_URL + " for coap", //
-                        "  - " + DEFAULT_COAPS_URL + " for coaps" })
+                        "  - " + DEFAULT_COAP_URL + " for coap+tcp", //
+                        "  - " + DEFAULT_COAPS_URL + " for coaps+tcp" })
         public String url;
 
         @Option(names = { "-b", "--bootstrap" },
@@ -305,26 +305,13 @@ public class LeshanClientDemoCLI implements Runnable {
         int indexOf = main.url.indexOf("://");
         String scheme = main.url.substring(0, indexOf);
         // we support only coap and coaps
-        if (!"coap".equals(scheme) && !"coaps".equals(scheme)) {
+        if (!"coap+tcp".equals(scheme) && !"coaps+tcp".equals(scheme)) {
             throw new MultiParameterException(spec.commandLine(),
                     String.format("Invalid URL %s : unknown scheme '%s', we support only 'coap' or 'coaps' for now",
                             main.url, scheme),
                     "-u");
         }
         // check scheme matches configuration
-        if (identity.hasIdentity()) {
-            if (!scheme.equals("coaps")) {
-                throw new MultiParameterException(spec.commandLine(), String.format(
-                        "Invalid URL %s : '%s' scheme must be used without PSK, RPK or x509 option. Do you mean 'coaps' ? ",
-                        main.url, scheme), "-u");
-            }
-        } else {
-            if (!scheme.equals("coap")) {
-                throw new MultiParameterException(spec.commandLine(), String.format(
-                        "Invalid URL %s : '%s' scheme must be used with PSK, RPK or x509 option. Do you mean 'coap' ? ",
-                        main.url, scheme), "-u");
-            }
-        }
     }
 
     protected void normalizedServerUrl() {
@@ -348,9 +335,9 @@ public class LeshanClientDemoCLI implements Runnable {
         if (!main.url.contains("://")) {
             // it seems scheme is not present try to add it
             if (identity.hasIdentity()) {
-                main.url = "coaps://" + main.url;
+                main.url = "coaps+tcp://" + main.url;
             } else {
-                main.url = "coap://" + main.url;
+                main.url = "coap+tcp://" + main.url;
             }
         }
     }

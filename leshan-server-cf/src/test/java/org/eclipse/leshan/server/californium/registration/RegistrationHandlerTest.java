@@ -118,7 +118,7 @@ public class RegistrationHandlerTest {
 
     private RegisterRequest givenRegisterRequestWithEndpoint(String endpoint) {
         try {
-            return new RegisterRequest(endpoint, 3600l, "1.1", EnumSet.of(BindingMode.U), false, null,
+            return new RegisterRequest(endpoint, 3600l, "1.1", EnumSet.of(BindingMode.T), false, null,
                     new DefaultLinkParser().parseCoreLinkFormat("</1/0/1>,</2/1>,</3>".getBytes()), null);
         } catch (LinkParseException e) {
             throw new IllegalStateException(e);

@@ -79,7 +79,6 @@ public class ObservationServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         } catch (Error e) {
-            LOG.error("kurwa", e);
             return;
         }
         Random random = ThreadLocalRandom.current();
@@ -115,7 +114,6 @@ public class ObservationServlet extends HttpServlet {
                         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                         return;
                     } catch (Error e) {
-                        LOG.error("kurwa", e);
                         return;
                     }
             } else {

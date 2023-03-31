@@ -129,6 +129,7 @@ export default {
       this.axios
         .delete(`${this.requestPath()}/observe`)
         .then(() => {
+          console.log("The request path is equal to " + this.requestPath());
           requestButton.changeState("success");
           this.$store.setObserved(this.endpoint, this.path, false);
         })
